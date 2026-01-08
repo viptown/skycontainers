@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{block "title" .}}SKY Mobile{{end}}</title>
+    <meta name="csrf-token" content="{{.CSRFToken}}">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        body {
+            padding-bottom: 70px;
+            /* Space for bottom nav */
+            background-color: var(--surface);
+            font-size: 16px;
+            /* Increased base font size */
+        }
+
+        .mobile-header {
+            padding: 1rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .mobile-header h1 {
+            font-size: 1.5rem;
+            /* Increased from 1.25rem */
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            /* Slightly taller */
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            /* Increased from 0.75rem */
+            font-weight: 600;
+            width: 100%;
+            height: 100%;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 28px;
+            /* Increased from 24px */
+            height: 28px;
+            margin-bottom: 4px;
+        }
+
+        .mobile-container {
+            padding: 1rem;
+        }
+
+        /* Mobile specific toast */
+        .toast-stack {
+            top: auto;
+            bottom: 80px;
+            left: 1rem;
+            right: 1rem;
+        }
+
+        /* Increase form element sizes */
+        .mobile-container .form-label {
+            font-size: 1.1rem;
+            /* Larger labels */
+            font-weight: 600;
+        }
+
+        .mobile-container .form-input,
+        .mobile-container .form-select {
+            font-size: 1.1rem;
+            /* Larger input text */
+            padding: 1rem;
+            /* More padding */
+        }
+
+        .mobile-container .btn {
+            font-size: 1.1rem;
+            /* Larger button text */
+            padding: 1rem 1.5rem;
+        }
+
+        /* Larger text in results */
+        .mobile-container p,
+        .mobile-container div {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body hx-boost="true">
+    <header class="mobile-header">
+        <h1>{{block "header" .}}SKY Containers{{end}}</h1>
+        <form action="/mobile/logout" method="POST" style="display:inline;" hx-boost="false">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" style="background:none; border:none; color:var(--text-muted);">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
+        </form>
+    </header>
+
+    <main class="mobile-container">
+        {{if .Error}}
+        <div class="toast toast-error" role="alert" data-toast>
+            <div class="toast-body">{{.Error}}</div>
+        </div>
+        {{end}}
+        {{if .Success}}
+        <div class="toast toast-success" role="status" data-toast>
+            <div class="toast-body">{{.Success}}</div>
+        </div>
+        {{end}}
+
+        {{block "content" .}}{{end}}
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="/mobile/scan" class="nav-item {{if eq .Data.ActiveNav " scan"}}active{{end}}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>위치등록</span>
+        </a>
+        <a href="/mobile/search" class="nav-item {{if eq .Data.ActiveNav " search"}}active{{end}}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>BL찾기</span>
+        </a>
+        <a href="/mobile/leaves" class="nav-item {{if eq .Data.ActiveNav " leaves"}}active{{end}}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>휴가신청</span>
+        </a>
+    </nav>
+    <script>
+        // CSRF token setup
+        (function () {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (!meta || !window.htmx) { return; }
+            document.body.addEventListener("htmx:configRequest", function (evt) {
+                evt.detail.headers["X-CSRF-Token"] = meta.getAttribute("content");
+            });
+        })();
+
+        // Auto-dismiss toasts
+        setTimeout(function () {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (t) {
+                t.style.display = 'none';
+            });
+        }, 3000);
+    </script>
+</body>
+
+</html>

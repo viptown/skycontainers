@@ -1,0 +1,66 @@
+{{define "content"}}
+{{$isEdit := and .Data (gt .Data.ID 0)}}
+{{$item := .Data}}
+<form hx-post="{{if $isEdit}}/admin/bl_markings/{{.Data.ID}}/edit{{else}}/admin/bl_markings{{end}}" hx-push-url="false">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <h1 style="display:none">{{.Title}}</h1>
+
+    {{if $isEdit}}
+    <div class="form-group">
+        <label>컨테이너 번호</label>
+        <input type="text" value="{{if $item}}{{$item.ContainerNo}}{{end}}" readonly
+            style="background: var(--bg-dark); color: var(--text-muted);">
+    </div>
+    {{else}}
+    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label for="container_id">컨테이너 ID</label>
+            <input type="number" id="container_id" name="container_id" value="{{if .Data}}{{.Data.ContainerID}}{{end}}"
+                required>
+        </div>
+        <div class="form-group">
+            <label for="user_id">사용자 ID</label>
+            <input type="number" id="user_id" name="user_id" value="{{if .Data}}{{.Data.UserID}}{{end}}" required>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="bl_position_id">BL 포지션 ID</label>
+        <input type="number" id="bl_position_id" name="bl_position_id"
+            value="{{if .Data}}{{formatID .Data.BLPositionID}}{{end}}">
+    </div>
+    {{end}}
+
+    <div class="form-group">
+        <label for="hbl_no">HBL 번호</label>
+        <input type="text" id="hbl_no" name="hbl_no" value="{{if .Data}}{{.Data.HBLNo}}{{end}}" required
+            placeholder="HBL 번호를 입력하세요">
+    </div>
+
+    <div class="form-group">
+        <label for="marks">마킹 정보</label>
+        <textarea id="marks" name="marks" rows="3" required
+            placeholder="마킹 정보를 입력하세요">{{if .Data}}{{.Data.Marks}}{{end}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label>상태</label>
+        <label class="switch">
+            <input class="switch-input" type="checkbox" name="is_active" value="true" {{if .Data}}{{if
+                .Data.IsActive}}checked{{end}}{{else}}checked{{end}}>
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-label">활성</span>
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 1rem;">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{if $isEdit}}정보 수정{{else}}신규 등록{{end}}
+        </button>
+    </div>
+</form>
+{{end}}

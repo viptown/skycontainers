@@ -1,0 +1,73 @@
+{{define "content"}}
+{{$isEdit := and .Data (gt .Data.ID 0)}}
+<form hx-post="{{if $isEdit}}/admin/reports/{{.Data.ID}}/edit{{else}}/admin/reports{{end}}" hx-push-url="false">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <h1 style="display:none">{{.Title}}</h1>
+
+    <div class="form-group">
+        <label>유형</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+            <label>
+                <input type="radio" name="types" value="1" {{if .Data}}{{if eq .Data.Types "1"}}checked{{end}}{{else}}checked{{end}}>
+                반차
+            </label>
+            <label>
+                <input type="radio" name="types" value="2" {{if .Data}}{{if eq .Data.Types "2"}}checked{{end}}{{end}}>
+                연차
+            </label>
+            <label>
+                <input type="radio" name="types" value="3" {{if .Data}}{{if eq .Data.Types "3"}}checked{{end}}{{end}}>
+                경조
+            </label>
+            <label>
+                <input type="radio" name="types" value="4" {{if .Data}}{{if eq .Data.Types "4"}}checked{{end}}{{end}}>
+                병가
+            </label>
+            <label>
+                <input type="radio" name="types" value="5" {{if .Data}}{{if eq .Data.Types "5"}}checked{{end}}{{end}}>
+                무급
+            </label>
+            <label>
+                <input type="radio" name="types" value="6" {{if .Data}}{{if eq .Data.Types "6"}}checked{{end}}{{end}}>
+                기타
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="subject">제목</label>
+        <input type="text" id="subject" name="subject" value="{{if .Data}}{{.Data.Subject}}{{end}}" required
+            placeholder="휴가신청서 제목을 입력하세요">
+    </div>
+
+    <div class="form-group">
+        <label for="contents">내용</label>
+        <textarea id="contents" name="contents" rows="5" required
+            placeholder="휴가신청서 내용을 입력하세요">{{if .Data}}{{.Data.Contents}}{{end}}</textarea>
+    </div>
+
+    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label for="period_start">기간 시작</label>
+            <input type="date" id="period_start" name="period_start"
+                value="{{if .Data}}{{formatDate .Data.PeriodStart}}{{end}}" required>
+        </div>
+        <div class="form-group">
+            <label for="period_end">기간 종료</label>
+            <input type="date" id="period_end" name="period_end"
+                value="{{if .Data}}{{formatDate .Data.PeriodEnd}}{{end}}" required>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 1rem;">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{if $isEdit}}정보 수정{{else}}신규 등록{{end}}
+        </button>
+    </div>
+</form>
+{{end}}
+

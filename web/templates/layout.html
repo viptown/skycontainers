@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}스카이 컨테이너 관리 시스템{{end}}</title>
+    <meta name="csrf-token" content="{{.CSRFToken}}">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem("theme");
+                var system = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                document.documentElement.setAttribute("data-theme", stored || system);
+            } catch (e) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
+</head>
+
+<body hx-boost="{{if .Authenticated}}true{{else}}false{{end}}"
+    class="{{if .Authenticated}}app-body{{else}}auth-body{{end}}">
+    {{if .Authenticated}}
+    <nav class="main-nav" hx-boost="false">
+        <div class="container nav-content">
+            {{if canAccess .User "read" "supplier_portal"}}
+            <a href="/supplier/portal" class="logo">SKY <span>Containers</span></a>
+            {{else}}
+            <a href="/admin/dashboard" class="logo">SKY <span>Containers</span></a>
+            {{end}}
+            <ul class="nav-links">
+                {{if canAccess .User "read" "dashboard"}}
+                <li><a href="/admin/dashboard">대시보드</a></li>
+                {{end}}
+
+                {{if canAccess .User "read" "containers"}}
+                <li><a href="/admin/io_management">입출고관리</a></li>
+                {{end}}
+                {{if canAccess .User "read" "containers"}}
+                <li><a href="/admin/containers">컨테이너관리</a></li>
+                {{end}}
+                {{if canAccess .User "read" "bl_markings"}}
+                <li><a href="/admin/bl_markings">BL 마킹</a></li>
+                {{end}}
+                {{if canAccess .User "read" "bl_positions"}}
+                <li><a href="/admin/bl_positions">BL 포지션</a></li>
+                {{end}}
+                {{if canAccess .User "read" "suppliers"}}
+                <li><a href="/admin/suppliers">업체관리</a></li>
+                {{end}}
+                {{if canAccess .User "read" "reports"}}
+                <li><a href="/admin/reports">휴가신청서</a></li>
+                {{end}}
+                {{if canAccess .User "read" "supplier_portal"}}
+                <li><a href="/supplier/portal">업체전용조회</a></li>
+                {{end}}
+                {{if or (canAccess .User "read" "carnumbers") (canAccess .User "read" "users") (canAccess .User "read"
+                "policies")}}
+                <li class="nav-item has-submenu">
+                    <button type="button" class="nav-link nav-link--menu" aria-haspopup="true" aria-expanded="false">
+                        설정
+                        <span class="nav-caret" aria-hidden="true">▾</span>
+                    </button>
+                    <ul class="submenu" aria-label="설정 메뉴">
+                        {{if canAccess .User "read" "container_types"}}
+                        <li><a href="/admin/container_types">규격관리</a></li>
+                        {{end}}
+                        {{if canAccess .User "read" "carnumbers"}}
+                        <li><a href="/admin/carnumbers">차량번호</a></li>
+                        {{end}}
+                        {{if canAccess .User "read" "users"}}
+                        <li><a href="/admin/users">사용자관리</a></li>
+                        {{end}}
+                        {{if canAccess .User "read" "policies"}}
+                        <li><a href="/admin/policies">권한관리</a></li>
+                        {{end}}
+                    </ul>
+                </li>
+                {{end}}
+            </ul>
+            <div class="nav-actions">
+                <button class="theme-toggle" type="button" aria-label="테마 전환" data-theme-toggle>
+                    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M12 4a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1zm0 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7-5a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V12a1 1 0 0 1 1-1zM12 18.5a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1zM4 11a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V12a1 1 0 0 1 1-1zm13.07-5.07a1 1 0 0 1 1.42 0l1.06 1.06a1 1 0 1 1-1.42 1.42l-1.06-1.06a1 1 0 0 1 0-1.42zM5.45 17.65a1 1 0 0 1 1.42 0l1.06 1.06a1 1 0 1 1-1.42 1.42l-1.06-1.06a1 1 0 0 1 0-1.42zm12.74 1.06a1 1 0 0 1 0 1.42l-1.06 1.06a1 1 0 1 1-1.42-1.42l1.06-1.06a1 1 0 0 1 1.42 0zM6.93 5.93a1 1 0 0 1 0 1.42L5.87 8.41A1 1 0 1 1 4.45 7l1.06-1.06a1 1 0 0 1 1.42 0z" />
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                            d="M21 14.5A8.5 8.5 0 0 1 9.5 3a1 1 0 0 0-1.17 1.25A7 7 0 1 0 19.75 15.67 1 1 0 0 0 21 14.5z" />
+                    </svg>
+                </button>
+                <div class="user-info">
+                    <div class="user-details">
+                        <div class="user-name">{{.User.Name}}</div>
+                        <div class="user-role">{{.User.Role}}</div>
+                    </div>
+                    <form action="/logout" method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            로그아웃
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {{else}}
+    <div class="auth-topbar">
+        <a href="/" class="logo">SKY <span>Containers</span></a>
+        <button class="theme-toggle" type="button" aria-label="테마 전환" data-theme-toggle>
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M12 4a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V5a1 1 0 0 1 1-1zm0 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7-5a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V12a1 1 0 0 1 1-1zM12 18.5a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1zM4 11a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V12a1 1 0 0 1 1-1zm13.07-5.07a1 1 0 0 1 1.42 0l1.06 1.06a1 1 0 1 1-1.42 1.42l-1.06-1.06a1 1 0 0 1 0-1.42zM5.45 17.65a1 1 0 0 1 1.42 0l1.06 1.06a1 1 0 1 1-1.42 1.42l-1.06-1.06a1 1 0 0 1 0-1.42zm12.74 1.06a1 1 0 0 1 0 1.42l-1.06 1.06a1 1 0 1 1-1.42-1.42l1.06-1.06a1 1 0 0 1 1.42 0zM6.93 5.93a1 1 0 0 1 0 1.42L5.87 8.41A1 1 0 1 1 4.45 7l1.06-1.06a1 1 0 0 1 1.42 0z" />
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a1 1 0 0 0-1.17 1.25A7 7 0 1 0 19.75 15.67 1 1 0 0 0 21 14.5z" />
+            </svg>
+        </button>
+    </div>
+    {{end}}
+
+    {{if or .Success .Error}}
+    <div class="toast-stack" aria-live="polite">
+        {{if .Success}}
+        <div class="toast toast-success" role="status" data-toast>
+            <div class="toast-icon" aria-hidden="true">OK</div>
+            <div class="toast-body">
+                <div class="toast-title">완료</div>
+                <div class="toast-message">{{.Success}}</div>
+            </div>
+            <button class="toast-close" type="button" aria-label="닫기" data-toast-close>&times;</button>
+        </div>
+        {{end}}
+        {{if .Error}}
+        <div class="toast toast-error" role="alert" data-toast>
+            <div class="toast-icon" aria-hidden="true">!</div>
+            <div class="toast-body">
+                <div class="toast-title">오류</div>
+                <div class="toast-message">{{.Error}}</div>
+            </div>
+            <button class="toast-close" type="button" aria-label="닫기" data-toast-close>&times;</button>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
+    <main class="container main-content">
+        {{block "content" .}}{{end}}
+    </main>
+
+    <footer class="container">
+        <p>&copy; 2026 Sky Containers. All rights reserved.</p>
+    </footer>
+
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var buttons = document.querySelectorAll("[data-theme-toggle]");
+            if (!buttons.length) {
+                return;
+            }
+
+            var getTheme = function () {
+                return root.getAttribute("data-theme") || "light";
+            };
+
+            var updateButtons = function (theme) {
+                buttons.forEach(function (btn) {
+                    btn.setAttribute("aria-pressed", theme === "dark");
+                    btn.setAttribute("title", theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환");
+                });
+            };
+
+            var setTheme = function (theme) {
+                root.setAttribute("data-theme", theme);
+                try {
+                    localStorage.setItem("theme", theme);
+                } catch (e) { }
+                updateButtons(theme);
+            };
+
+            updateButtons(getTheme());
+            buttons.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var next = getTheme() === "dark" ? "light" : "dark";
+                    setTheme(next);
+                });
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var toasts = document.querySelectorAll("[data-toast]");
+            if (!toasts.length) {
+                return;
+            }
+            toasts.forEach(function (toast) {
+                var close = toast.querySelector("[data-toast-close]");
+                var dismiss = function () {
+                    if (toast.classList.contains("toast-hide")) {
+                        return;
+                    }
+                    toast.classList.add("toast-hide");
+                    setTimeout(function () {
+                        if (toast && toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 280);
+                };
+                if (close) {
+                    close.addEventListener("click", dismiss);
+                }
+                setTimeout(dismiss, 4500);
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var items = document.querySelectorAll(".has-submenu");
+            if (!items.length) {
+                return;
+            }
+
+            var closeAll = function () {
+                items.forEach(function (item) {
+                    item.classList.remove("open");
+                    var btn = item.querySelector(".nav-link--menu");
+                    if (btn) {
+                        btn.setAttribute("aria-expanded", "false");
+                    }
+                });
+            };
+
+            items.forEach(function (item) {
+                var btn = item.querySelector(".nav-link--menu");
+                if (!btn) {
+                    return;
+                }
+                btn.addEventListener("click", function (evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    var isOpen = item.classList.contains("open");
+                    closeAll();
+                    if (!isOpen) {
+                        item.classList.add("open");
+                        btn.setAttribute("aria-expanded", "true");
+                    }
+                });
+            });
+
+            document.addEventListener("click", function (evt) {
+                if (!evt.target.closest(".has-submenu")) {
+                    closeAll();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (!meta || !window.htmx) {
+                return;
+            }
+            document.body.addEventListener("htmx:configRequest", function (evt) {
+                evt.detail.headers["X-CSRF-Token"] = meta.getAttribute("content");
+            });
+        })();
+    </script>
+    <!-- Global Modal structure -->
+    <div id="global-modal" class="modal-backdrop" onclick="if(event.target === this) closeGlobalModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="global-modal-title"></h2>
+                <button type="button" class="modal-close" onclick="closeGlobalModal()" aria-label="닫기">&times;</button>
+            </div>
+            <div id="global-modal-body" class="modal-body">
+                <!-- HTMX will load form here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openGlobalModal(title) {
+            if (title) {
+                document.getElementById('global-modal-title').innerText = title;
+            }
+            document.getElementById('global-modal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGlobalModal() {
+            document.getElementById('global-modal').classList.remove('show');
+            document.getElementById('global-modal-body').innerHTML = '';
+            document.body.style.overflow = '';
+        }
+
+        document.body.addEventListener('htmx:afterSwap', function (evt) {
+            if (evt.detail.target.id === 'global-modal-body') {
+                const titleEl = evt.detail.target.querySelector('h1');
+                if (titleEl) {
+                    document.getElementById('global-modal-title').innerText = titleEl.innerText;
+                    titleEl.style.display = 'none';
+                }
+                const backBtn = evt.detail.target.querySelector('a[href*="/admin/"]');
+                if (backBtn && backBtn.innerText.includes('목록')) {
+                    backBtn.style.display = 'none';
+                }
+                openGlobalModal();
+            }
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function (evt) {
+            if (evt.key === 'Escape') {
+                closeGlobalModal();
+            }
+        });
+
+        // Close modal when HTMX finishes a successful non-modal POST
+        document.body.addEventListener('htmx:beforeOnLoad', function (evt) {
+            if (evt.detail.xhr.status === 204 || (evt.detail.xhr.status >= 200 && evt.detail.xhr.status < 300 && evt.detail.xhr.getResponseHeader("HX-Redirect"))) {
+                closeGlobalModal();
+            }
+        });
+    </script>
+</body>
+
+
+</html>

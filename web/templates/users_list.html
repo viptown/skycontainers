@@ -1,0 +1,130 @@
+{{template "layout.html" .}}
+
+{{define "title"}}{{.Title}}{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <div class="header-title">
+        <h1>{{.Title}}</h1>
+        <p class="subtitle">시스템 사용자와 권한을 관리합니다.</p>
+    </div>
+    {{if canAccess .User "create" "users"}}
+    <button hx-get="/admin/users/new" hx-target="#global-modal-body" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <line x1="19" y1="8" x2="19" y2="14"></line>
+            <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+        사용자 추가
+    </button>
+    {{end}}
+</div>
+
+<div class="table-container search-card">
+    <table>
+        <thead>
+            <tr>
+                <th>계정</th>
+                <th>이름</th>
+                <th>역할</th>
+                <th>상태</th>
+                <th>업체</th>
+                <th>최근 로그인</th>
+                <th style="text-align: right;">관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Data.Items}}
+            <tr id="user-row-{{.ID}}">
+                <td><span class="status-pill status-pill--info">{{.UID}}</span></td>
+                <td style="font-weight: 600;">{{.Name}}</td>
+                <td>
+                    {{if eq .Role "admin"}}
+                    <span class="badge badge-warning">관리자</span>
+                    {{else}}
+                    <span class="badge">일반</span>
+                    {{end}}
+                </td>
+                <td id="user-status-{{.ID}}">
+                    {{if eq .Status "active"}}
+                    <span class="badge badge-success">활성</span>
+                    {{else}}
+                    <span class="badge badge-danger">비활성</span>
+                    {{end}}
+                </td>
+                <td>{{if .SupplierName}}{{.SupplierName}}{{else}}-{{end}}</td>
+                <td style="color: var(--text-muted); font-size: 0.9rem;">{{formatDateTime .LastLoginAt}}</td>
+                <td>
+                    {{if canAccess $.User "update" "users"}}
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <form method="POST" action="/admin/users/{{.ID}}/status" hx-post="/admin/users/{{.ID}}/status"
+                            hx-target="#user-status-{{.ID}}" hx-swap="outerHTML" hx-trigger="change" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <label class="switch" style="transform: scale(0.9); transform-origin: left center;">
+                                <input class="switch-input" type="checkbox" name="is_active" value="true" {{if eq .Status "active"}}checked{{end}}
+                                    aria-label="상태 변경">
+                                <span class="switch-track" aria-hidden="true"></span>
+                            </label>
+                        </form>
+                        <button hx-get="/admin/users/{{.ID}}/edit" hx-target="#global-modal-body"
+                            class="btn btn-primary btn-sm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                            </svg>
+                            수정
+                        </button>
+                        <button class="btn btn-danger btn-sm" hx-delete="/admin/users/{{.ID}}" hx-confirm="정말 삭제하시겠습니까?"
+                            hx-target="#user-row-{{.ID}}" hx-swap="outerHTML">  
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="14" height="14" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                            </svg>
+                            삭제
+                        </button>
+                    </div>
+                    {{else}}
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">읽기 전용</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <div class="empty-text">등록된 사용자 정보가 없습니다.</div>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination">
+    {{$pager := .Data.Pager}}
+    {{if gt $pager.TotalPages 1}}
+    {{if gt $pager.CurrentPage 1}}
+    <a href="?page=1" class="page-link">&lt;&lt;</a>
+    <a href="?page={{add $pager.CurrentPage -1}}" class="page-link">&lt;</a>
+    {{end}}
+
+    {{range $p := $pager.Pages}}
+    <a href="?page={{$p}}" class="page-link {{if eq $p $pager.CurrentPage}}active{{end}}">{{$p}}</a>
+    {{end}}
+
+    {{if lt $pager.CurrentPage $pager.TotalPages}}
+    <a href="?page={{add $pager.CurrentPage 1}}" class="page-link">&gt;</a>
+    <a href="?page={{$pager.TotalPages}}" class="page-link">&gt;&gt;</a>
+    {{end}}
+    {{end}}
+</div>
+{{end}}

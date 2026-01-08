@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{.CSRFToken}}">
+    <title>SKY Mobile Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            background-color: var(--surface);
+            display: flex;
+            align-items: flex-start;
+            /* Align to top */
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 450px;
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+            margin-top: 10vh;
+            /* Position slightly from top */
+        }
+
+        .login-logo {
+            font-size: 2.2rem;
+            /* Even larger */
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: var(--text-main);
+        }
+
+        .login-logo span {
+            font-weight: 400;
+            font-size: 1.3rem;
+            display: block;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            /* More spacing */
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 1.3rem;
+            /* Larger labels */
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1.25rem;
+            /* Larger padding */
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface-2);
+            color: var(--text-main);
+            font-size: 1.3rem;
+            /* Larger input text */
+            box-sizing: border-box;
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        /* VERY LARGE LOGIN BUTTON */
+        .btn-login {
+            font-size: 1.8rem;
+            padding: 1.5rem;
+            font-weight: 800;
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: var(--radius-md);
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="login-logo">
+            SKY Containers
+            <span
+                style="font-weight:400; font-size: 1rem; display:block; color:var(--text-muted); margin-top: 0.5rem;">Mobile</span>
+        </div>
+
+        {{if .Error}}
+        <div class="error-msg">{{.Error}}</div>
+        {{end}}
+
+        <form method="POST" action="/mobile/login">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <div class="form-group">
+                <label class="form-label">아이디</label>
+                <input type="text" name="uid" class="form-input" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호</label>
+                <input type="password" name="password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-login">로그인</button>
+        </form>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+{{define "content"}}
+{{$item := .Data.Item}}
+<form hx-post="{{if gt $item.ID 0}}/admin/containers/{{$item.ID}}/edit{{else}}/admin/containers{{end}}"
+    hx-push-url="false">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <h1 style="display:none">{{.Title}}</h1>
+
+    <div class="form-group">
+        <label for="container_no">컨테이너 번호</label>
+        <input type="text" id="container_no" name="container_no" value="{{$item.ContainerNo}}" required
+            placeholder="예: ABCD1234567">
+    </div>
+
+    <div class="form-group">
+        <label>컨테이너 타입</label>
+        <div class="radio-group" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
+            {{range .Data.ContainerTypes}}
+            <label class="radio-card">
+                <input class="radio-input" type="radio" name="containers_type_id" value="{{.ID}}" {{if eq .ID
+                    $item.ContainerTypeID}}checked{{end}} required>
+                <span class="radio-content" style="padding: 0.5rem;">
+                    <strong>{{.Code}}</strong>
+                    <span style="font-size: 0.75rem;">{{stripParen .Name}}</span>
+                </span>
+            </label>
+            {{else}}
+            <div class="text-muted">등록된 컨테이너 타입이 없습니다.</div>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>컨테이너 상태</label>
+        <div class="radio-group status-group">
+            <label class="radio-card">
+                <input class="radio-input" type="radio" name="container_status" value="empty" {{if eq
+                    $item.ContainerStatus "empty" }}checked{{end}} required>
+                <span class="radio-content">
+                    <strong>EMPTY</strong>
+                </span>
+            </label>
+            <label class="radio-card">
+                <input class="radio-input" type="radio" name="container_status" value="full" {{if eq
+                    $item.ContainerStatus "full" }}checked{{end}} required>
+                <span class="radio-content">
+                    <strong>FULL</strong>
+                </span>
+            </label>
+            <label class="radio-card">
+                <input class="radio-input" type="radio" name="container_status" value="store" {{if eq
+                    $item.ContainerStatus "store" }}checked{{end}} required>
+                <span class="radio-content">
+                    <strong>보관</strong>
+                </span>
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="supplier_id">업체</label>
+        <select id="supplier_id" name="supplier_id" required>
+            <option value="" disabled {{if eq $item.SupplierID 0}}selected{{end}}>업체를 선택하세요</option>
+            {{range .Data.Suppliers}}
+            <option value="{{.ID}}" {{if eq .ID $item.SupplierID}}selected{{end}}>{{.Name}}</option>
+            {{else}}
+            <option value="" disabled>등록된 업체가 없습니다</option>
+            {{end}}
+        </select>
+    </div>
+
+    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label for="booking_no">부킹 번호</label>
+            <input type="text" id="booking_no" name="booking_no" value="{{$item.BookingNo}}">
+        </div>
+        <div class="form-group">
+            <label for="car_no">차량 번호</label>
+            <input type="text" id="car_no" name="car_no" value="{{$item.CarNo}}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="memo">메모</label>
+        <textarea id="memo" name="memo" rows="3">{{$item.Memo}}</textarea>
+    </div>
+
+    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+            <label for="inbound_date">입고일</label>
+            <input type="date" id="inbound_date" name="inbound_date" value="{{formatDate $item.InboundDate}}">
+        </div>
+        <div class="form-group">
+            <label for="processing_date">작업일</label>
+            <input type="date" id="processing_date" name="processing_date" value="{{formatDate $item.ProcessingDate}}">
+        </div>
+        <div class="form-group">
+            <label for="outbound_date">출고일</label>
+            <input type="date" id="outbound_date" name="outbound_date" value="{{formatDate $item.OutboundDate}}">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="processing_cancelled_at">취소 일시</label>
+        <input type="datetime-local" id="processing_cancelled_at" name="processing_cancelled_at"
+            value="{{formatDateTime $item.ProcessingCancelledAt}}">
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 1rem;">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{if gt $item.ID 0}}정보 수정{{else}}등록{{end}}
+        </button>
+    </div>
+</form>
+{{end}}

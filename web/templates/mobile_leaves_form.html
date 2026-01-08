@@ -1,0 +1,65 @@
+{{template "layout_mobile.html" .}}
+
+{{define "header"}}휴가 신청 작성{{end}}
+
+{{define "content"}}
+<div class="leaves-form-container">
+    <form method="POST" action="/mobile/leaves/new">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+        <div class="form-group">
+            <label class="form-label">구분</label>
+            <select name="type" class="form-select" required>
+                <option value="1">반차</option>
+                <option value="2">연차</option>
+                <option value="3">경조</option>
+                <option value="4">병가</option>
+                <option value="5">무급</option>
+                <option value="6">기타</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">제목</label>
+            <input type="text" name="subject" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">기간</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="date" name="period_start" class="form-input" required>
+                <span style="align-self: center;">~</span>
+                <input type="date" name="period_end" class="form-input" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">내용</label>
+            <textarea name="contents" class="form-input" rows="5"></textarea>
+        </div>
+
+        <div class="form-actions" style="margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary btn-block btn-lg" style="width: 100%;">신청하기</button>
+            <a href="/mobile/leaves" class="btn btn-secondary btn-block btn-lg"
+                style="width: 100%; margin-top: 0.5rem; text-align: center; display: block;">취소</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        color: var(--text-main);
+    }
+
+    textarea.form-input {
+        resize: vertical;
+        min-height: 120px;
+    }
+</style>
+{{end}}

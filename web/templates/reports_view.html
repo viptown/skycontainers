@@ -1,0 +1,42 @@
+{{define "content"}}
+<h1 style="display:none">{{.Title}}</h1>
+
+<div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+        <label>작성자</label>
+        <input type="text" value="{{if .Data.UserName}}{{.Data.UserName}}{{else}}{{.Data.UserID}}{{end}}" readonly>
+    </div>
+    <div class="form-group">
+        <label>유형</label>
+        <input type="text" value="{{reportTypeLabel .Data.Types}}" readonly>
+    </div>
+</div>
+
+<div class="form-group">
+    <label for="subject">제목</label>
+    <input type="text" id="subject" value="{{if .Data}}{{.Data.Subject}}{{end}}" readonly>
+</div>
+
+<div class="form-group">
+    <label for="contents">내용</label>
+    <textarea id="contents" rows="6" readonly>{{if .Data}}{{.Data.Contents}}{{end}}</textarea>
+</div>
+
+<div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="form-group">
+        <label>기간 시작</label>
+        <input type="text" value="{{if .Data}}{{formatDate .Data.PeriodStart}}{{end}}" readonly>
+    </div>
+    <div class="form-group">
+        <label>기간 종료</label>
+        <input type="text" value="{{if .Data}}{{formatDate .Data.PeriodEnd}}{{end}}" readonly>
+    </div>
+</div>
+
+<div style="display: flex; gap: 1rem; margin-top: 2rem;">
+    <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center; padding: 1rem;"
+        onclick="closeGlobalModal()">
+        닫기
+    </button>
+</div>
+{{end}}

@@ -1,0 +1,133 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+{{$items := .Data.Items}}
+{{$hblNo := .Data.HBLNo}}
+<style>
+    .bl-detail {
+        display: none;
+    }
+
+    .bl-table.show-bl .bl-detail {
+        display: table-cell;
+    }
+
+    .bl-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .supplier-table-wrap {
+        overflow-x: auto;
+    }
+
+    .bl-table {
+        min-width: 980px;
+        width: 100%;
+    }
+
+    .bl-table th,
+    .bl-table td {
+        white-space: nowrap;
+    }
+
+    .bl-table .bl-detail--marks {
+        white-space: normal;
+        min-width: 200px;
+    }
+</style>
+<div class="page-header">
+    <div class="header-title">
+        <h1>{{.Title}}</h1>
+        <p class="subtitle">HBL 번호로 컨테이너 정보를 조회합니다.</p>
+    </div>
+</div>
+<div class="table-container search-card">
+    <form method="GET" action="/supplier/portal">
+        <div class="search-grid">
+            <div class="search-group search-group--half">
+                <label for="search_hbl_no">HBL 번호</label>
+                <input type="text" id="search_hbl_no" name="hbl_no" value="{{$hblNo}}" placeholder="HBL 번호를 입력하세요">
+            </div>
+            <div class="search-actions">
+                <span class="search-summary">검색 결과 {{len $items}}건</span>
+                <button type="submit" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    검색
+                </button>
+                <a href="/supplier/portal" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                    </svg>
+                    초기화
+                </a>
+                <button type="button" class="btn btn-secondary bl-toggle" id="bl-toggle-btn">
+                    BL 상세 보기
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="table-container supplier-table-wrap">
+    <table class="bl-table" id="bl-table">
+        <thead>
+            <tr>
+                <th>HBL 번호</th>
+                <th>컨테이너 번호</th>
+                <th>컨테이너 타입</th>
+                <th>업체</th>
+                <th>입고일</th>
+                <th>작업일</th>
+                <th>출고일</th>
+                <th class="bl-detail">BL 포지션</th>
+                <th class="bl-detail">마킹</th>
+                <th class="bl-detail">등록일</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $items}}
+            <tr>
+                <td>{{.HBLNo}}</td>
+                <td><span class="container-no">{{.ContainerNo}}</span></td>
+                <td>{{if .ContainerTypeName}}{{stripParen .ContainerTypeName}}{{else}}-{{end}}</td>
+                <td>{{if .SupplierName}}{{.SupplierName}}{{else}}-{{end}}</td>
+                <td>{{formatDate .InboundDate}}</td>
+                <td>{{formatDate .ProcessingDate}}</td>
+                <td>{{formatDate .OutboundDate}}</td>
+                <td class="bl-detail">{{if .BLPositionName}}{{.BLPositionName}}{{else}}-{{end}}</td>
+                <td class="bl-detail bl-detail--marks">{{if .Marks}}{{.Marks}}{{else}}-{{end}}</td>
+                <td class="bl-detail">{{formatDate .CreatedAt}}</td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    {{if $hblNo}}조회 결과가 없습니다.{{else}}HBL 번호를 입력해 주세요.{{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+<script>
+    (function () {
+        var table = document.getElementById("bl-table");
+        var toggleBtn = document.getElementById("bl-toggle-btn");
+        if (!table || !toggleBtn) {
+            return;
+        }
+
+        toggleBtn.addEventListener("click", function () {
+            var isOpen = table.classList.toggle("show-bl");
+            toggleBtn.textContent = isOpen ? "BL 상세 숨기기" : "BL 상세 보기";
+        });
+    })();
+</script>
+{{end}}

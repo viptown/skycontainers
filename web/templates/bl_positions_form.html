@@ -1,0 +1,24 @@
+{{define "content"}}
+{{$isEdit := and .Data (gt .Data.ID 0)}}
+<form hx-post="{{if $isEdit}}/admin/bl_positions/{{.Data.ID}}/edit{{else}}/admin/bl_positions{{end}}"
+    hx-push-url="false">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <h1 style="display:none">{{.Title}}</h1>
+
+    <div class="form-group">
+        <label for="name">이름</label>
+        <input type="text" id="name" name="name" value="{{if .Data}}{{.Data.Name}}{{end}}" required
+            placeholder="예: A-1">
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 1rem;">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{if $isEdit}}정보 수정{{else}}신규 등록{{end}}
+        </button>
+    </div>
+</form>
+{{end}}

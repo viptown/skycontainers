@@ -1,0 +1,117 @@
+{{template "layout.html" .}}
+
+{{define "title"}}대시보드{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <div class="title-section">
+        <h1>관리 시스템 대시보드</h1>
+        <p class="subtitle">전체 입출고 및 시스템 현황을 실시간으로 확인하세요.</p>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <h3>오늘의 입고</h3>
+            <div class="stat-icon icon-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M5 15l7 7 7-7" />
+                </svg>
+            </div>
+        </div>
+        <div class="value">0</div>
+        <p class="stat-footer">전일 대비 <span class="trend-up">↑ 0%</span></p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <h3>오늘의 출고</h3>
+            <div class="stat-icon icon-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V2M5 9l7-7 7 7" />
+                </svg>
+            </div>
+        </div>
+        <div class="value">0</div>
+        <p class="stat-footer">전일 대비 <span class="trend-down">↓ 0%</span></p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <h3>보관 중인 컨테이너</h3>
+            <div class="stat-icon icon-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+            </div>
+        </div>
+        <div class="value">0</div>
+        <p class="stat-footer">점유율 <span class="text-white">0%</span></p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <h3>활성 사용자</h3>
+            <div class="stat-icon icon-accent">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="value">1</div>
+        <p class="stat-footer">현재 접속 중</p>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2>최근 입출고 현황</h2>
+            <a href="/admin/containers" class="btn-text">전체보기 &rsaquo;</a>
+        </div>
+        <div class="table-container" style="border: none; box-shadow: none; margin-bottom: 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>컨테이너 번호</th>
+                        <th>상태</th>
+                        <th>날짜</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 4rem 0;">
+                            <div class="empty-state">
+                                <p style="color: var(--text-muted); font-size: 0.9rem;">최근 활동이 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>공지사항 / 긴급 알림</h2>
+        </div>
+        <div class="notification-list">
+            <div class="notification-item">
+                <div class="notification-dot"></div>
+                <div class="notification-content">
+                    <p>시스템 초기화가 완료되었습니다. 입출고 데이터를 입력해 주세요.</p>
+                    <span class="notification-time">방금 전</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{end}}

@@ -1,0 +1,250 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+{{$pager := .Data.Pager}}
+{{$containerNo := .Data.ContainerNo}}
+{{$supplierID := .Data.SupplierID}}
+{{$inboundStart := .Data.InboundStart}}
+{{$inboundEnd := .Data.InboundEnd}}
+{{$processingStart := .Data.ProcessingStart}}
+{{$processingEnd := .Data.ProcessingEnd}}
+{{$outboundStart := .Data.OutboundStart}}
+{{$outboundEnd := .Data.OutboundEnd}}
+<div class="page-header">
+    <div class="title-section">
+        <h1>{{.Title}}</h1>
+        <p class="subtitle">컨테이너 입출고 정보를 관리합니다.</p>
+    </div>
+    {{if canAccess .User "create" "containers"}}
+    <button hx-get="/admin/containers/new" hx-target="#global-modal-body" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        입출고 추가
+    </button>
+    {{end}}
+</div>
+<div class="table-container search-card">
+    <form method="GET" action="/admin/containers">
+        <div class="search-grid">
+            <div class="search-group search-group--half">
+                <label for="search_container_no">컨테이너 번호</label>
+                <input type="text" id="search_container_no" name="container_no" value="{{.Data.ContainerNo}}"
+                    placeholder="컨테이너 번호를 입력하세요">
+            </div>
+            <div class="search-group search-group--half">
+                <label for="search_supplier_id">업체</label>
+                <select id="search_supplier_id" name="supplier_id">
+                    <option value="">전체 업체</option>
+                    {{range .Data.Suppliers}}
+                    <option value="{{.ID}}" {{if eq .ID $.Data.SupplierID}}selected{{end}}>{{.Name}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="search-group search-group--wide">
+                <label>입고일</label>
+                <div class="range-inputs">
+                    <input type="date" id="search_inbound_start" name="inbound_start" value="{{.Data.InboundStart}}">
+                    <span class="range-sep">~</span>
+                    <input type="date" id="search_inbound_end" name="inbound_end" value="{{.Data.InboundEnd}}">
+                </div>
+            </div>
+            <div class="search-group search-group--wide">
+                <label>작업일</label>
+                <div class="range-inputs">
+                    <input type="date" id="search_processing_start" name="processing_start"
+                        value="{{.Data.ProcessingStart}}">
+                    <span class="range-sep">~</span>
+                    <input type="date" id="search_processing_end" name="processing_end" value="{{.Data.ProcessingEnd}}">
+                </div>
+            </div>
+            <div class="search-group search-group--wide">
+                <label>출고일</label>
+                <div class="range-inputs">
+                    <input type="date" id="search_outbound_start" name="outbound_start" value="{{.Data.OutboundStart}}">
+                    <span class="range-sep">~</span>
+                    <input type="date" id="search_outbound_end" name="outbound_end" value="{{.Data.OutboundEnd}}">
+                </div>
+            </div>
+            <div class="search-actions">
+                <span class="search-summary">검색 결과 {{$pager.TotalItems}}건</span>
+                <button type="submit" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    검색
+                </button>
+                <a href="/admin/containers" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                    </svg>
+                    초기화
+                </a>
+                <a href="/admin/containers/export{{if or $containerNo $supplierID $inboundStart $inboundEnd $processingStart $processingEnd $outboundStart $outboundEnd}}?{{if $containerNo}}container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}{{if $containerNo}}&{{end}}supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}{{if or $containerNo $supplierID}}&{{end}}inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}{{if or $containerNo $supplierID $inboundStart}}&{{end}}inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}{{if or $containerNo $supplierID $inboundStart $inboundEnd}}&{{end}}processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}{{if or $containerNo $supplierID $inboundStart $inboundEnd $processingStart}}&{{end}}processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}{{if or $containerNo $supplierID $inboundStart $inboundEnd $processingStart $processingEnd}}&{{end}}outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}{{if or $containerNo $supplierID $inboundStart $inboundEnd $processingStart $processingEnd $outboundStart}}&{{end}}outbound_end={{urlquery $outboundEnd}}{{end}}{{end}}"
+                    class="btn btn-secondary" hx-boost="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    엑셀 다운로드
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 80px; text-align: center;">순서</th>
+                <th>컨테이너 번호</th>
+                <th>컨테이너 타입</th>
+                <th>상태</th>
+                <th>업체</th>
+                <th>입고일</th>
+                <th>작업일</th>
+                <th>출고일</th>
+                <th>차량번호</th>
+                <th style="text-align: right;">관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $idx, $item := .Data.Items}}
+            <tr id="container-row-{{$item.ID}}">
+                <td style="text-align: center;">{{add (add $pager.Offset $idx) 1}}</td>
+                <td><span class="container-no">{{$item.ContainerNo}}</span></td>
+                <td>{{if $item.ContainerTypeName}}{{stripParen $item.ContainerTypeName}}{{else}}-{{end}}</td>
+                <td>
+                    {{if eq $item.ContainerStatus "empty"}}
+                    <span class="badge">EMPTY</span>
+                    {{else if eq $item.ContainerStatus "full"}}
+                    <span class="badge">FULL</span>
+                    {{else if eq $item.ContainerStatus "store"}}
+                    <span class="badge">보관</span>
+                    {{else}}
+                    <span class="badge">{{$item.ContainerStatus}}</span>
+                    {{end}}
+                </td>
+                <td>{{if $item.SupplierName}}{{$item.SupplierName}}{{else}}-{{end}}</td>
+                <td>{{formatDate $item.InboundDate}}</td>
+                <td>{{formatDate $item.ProcessingDate}}</td>
+                <td>{{formatDate $item.OutboundDate}}</td>
+                <td>{{$item.CarNo}}</td>
+                <td>
+                    {{if or (canAccess $.User "update" "containers" $item.UserID) (canAccess $.User "delete" "containers" $item.UserID)}}
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        {{if canAccess $.User "update" "containers" $item.UserID}}
+                        <button hx-get="/admin/containers/{{$item.ID}}/edit" hx-target="#global-modal-body"
+                            class="btn btn-primary btn-sm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                            </svg>
+                            수정
+                        </button>
+                        {{end}}
+                        {{if canAccess $.User "delete" "containers" $item.UserID}}
+                        <button class="btn btn-danger btn-sm" hx-delete="/admin/containers/{{$item.ID}}"
+                            hx-confirm="정말 삭제하시겠습니까?" hx-target="#container-row-{{$item.ID}}" hx-swap="outerHTML">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                            </svg>
+                            삭제
+                        </button>
+                        {{end}}
+                    </div>
+                    {{else}}
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">권한 없음</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 5rem 0;">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="var(--text-muted)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-bottom: 1rem; opacity: 0.5;">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <p style="color: var(--text-muted); font-size: 1rem;">데이터가 없습니다.</p>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination">
+    {{if gt $pager.TotalPages 1}}
+    {{if gt $pager.CurrentPage 1}}
+    <a href="?page=1{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}&supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}&inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}&inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}&processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}&processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}&outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}&outbound_end={{urlquery $outboundEnd}}{{end}}"
+        class="page-link" title="First">&laquo;</a>
+    <a href="?page={{add $pager.CurrentPage -1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}&supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}&inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}&inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}&processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}&processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}&outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}&outbound_end={{urlquery $outboundEnd}}{{end}}"
+        class="page-link" title="Previous">&lsaquo;</a>
+    {{end}}
+
+    {{range $p := $pager.Pages}}
+    <a href="?page={{$p}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}&supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}&inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}&inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}&processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}&processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}&outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}&outbound_end={{urlquery $outboundEnd}}{{end}}"
+        class="page-link {{if eq $p $pager.CurrentPage}}active{{end}}">{{$p}}</a>
+    {{end}}
+
+    {{if lt $pager.CurrentPage $pager.TotalPages}}
+    <a href="?page={{add $pager.CurrentPage 1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}&supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}&inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}&inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}&processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}&processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}&outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}&outbound_end={{urlquery $outboundEnd}}{{end}}"
+        class="page-link" title="Next">&rsaquo;</a>
+    <a href="?page={{$pager.TotalPages}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $supplierID}}&supplier_id={{$supplierID}}{{end}}{{if $inboundStart}}&inbound_start={{urlquery $inboundStart}}{{end}}{{if $inboundEnd}}&inbound_end={{urlquery $inboundEnd}}{{end}}{{if $processingStart}}&processing_start={{urlquery $processingStart}}{{end}}{{if $processingEnd}}&processing_end={{urlquery $processingEnd}}{{end}}{{if $outboundStart}}&outbound_start={{urlquery $outboundStart}}{{end}}{{if $outboundEnd}}&outbound_end={{urlquery $outboundEnd}}{{end}}"
+        class="page-link" title="Last">&raquo;</a>
+    {{end}}
+    {{end}}
+</div>
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2.5rem;
+    }
+
+    .title-section h1 {
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .container-no {
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .text-muted {
+        color: var(--text-muted);
+        font-size: 0.8em;
+        margin-right: 2px;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+</style>
+{{end}}

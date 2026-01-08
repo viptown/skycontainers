@@ -1,0 +1,306 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+{{if .Data}}
+{{$tab := .Data.Tab}}
+{{$pager := .Data.Pager}}
+<div class="page-header">
+    <div class="title-section">
+        <h1>입출고관리</h1>
+        <p class="subtitle">컨테이너 입고, 작업, 출고 현황을 관리합니다.</p>
+    </div>
+</div>
+
+<div class="tabs-container">
+    <div class="tabs-header">
+        <a class="tab-btn {{if or (eq $tab "") (eq $tab "inbound")}}active{{end}}"
+            href="/admin/io_management?tab=inbound">입고예정</a>
+        <a class="tab-btn {{if eq $tab "work"}}active{{end}}" href="/admin/io_management?tab=work">작업확인</a>
+        <a class="tab-btn {{if eq $tab "outbound"}}active{{end}}" href="/admin/io_management?tab=outbound">출고처리</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            {{if or (eq $tab "") (eq $tab "inbound")}}
+            <h3>입고예정 컨테이너 리스트</h3>
+            {{else if eq $tab "work"}}
+            <h3>작업확인 컨테이너 리스트</h3>
+            {{else}}
+            <h3>출고처리 컨테이너 리스트</h3>
+            {{end}}
+        </div>
+        <div class="table-container">
+            <table>
+                {{if or (eq $tab "") (eq $tab "inbound")}}
+                <thead>
+                    <tr>
+                        <th class="col-index">순서</th>
+                        <th>업체명</th>
+                        <th>CONTAINER</th>
+                        <th>사이즈</th>
+                        <th>상태</th>
+                        <th>비고</th>
+                        <th style="width: 150px; text-align: center;">입고처리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $idx, $item := .Data.Items}}
+                    <tr>
+                        <td class="col-index">{{add $pager.Offset (add $idx 1)}}</td>
+                        <td>{{$item.SupplierName}}</td>
+                        <td><span class="container-no">{{$item.ContainerNo}}</span></td>
+                        <td><span class="status-pill status-pill--info">{{$item.ContainerTypeCode}}</span></td>
+                        <td>{{$item.ContainerStatus}}</td>
+                        <td>{{$item.Memo}}</td>
+                        <td style="text-align: center;">
+                            <button hx-get="/admin/io_management/{{$item.ID}}/inbound_modal"
+                                hx-target="#global-modal-body" class="btn btn-primary btn-sm">입고등록</button>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 5rem 0;">
+                            <div class="empty-state">
+                                <p style="color: var(--text-muted); font-size: 1rem;">데이터가 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+                {{else if eq $tab "work"}}
+                <thead>
+                    <tr>
+                        <th class="col-index">순서</th>
+                        <th>업체명</th>
+                        <th>CONTAINER</th>
+                        <th>사이즈</th>
+                        <th>입고일</th>
+                        <th>비고</th>
+                        <th style="width: 150px; text-align: center;">관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $idx, $item := .Data.Items}}
+                    <tr>
+                        <td class="col-index">{{add $pager.Offset (add $idx 1)}}</td>
+                        <td>{{$item.SupplierName}}</td>
+                        <td><span class="container-no">{{$item.ContainerNo}}</span></td>
+                        <td><span class="status-pill status-pill--info">{{$item.ContainerTypeCode}}</span></td>
+                        <td>{{formatDate $item.InboundDate}}</td>
+                        <td>{{$item.Memo}}</td>
+                        <td style="text-align: center;">
+                            <form method="POST" action="/admin/io_management/{{$item.ID}}/processing"
+                                style="display:inline" hx-boost="false" onsubmit="return confirm('작업확인 하시겠습니까?')">
+                                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                                <button type="submit" class="btn btn-primary btn-sm">작업확인</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 5rem 0;">
+                            <div class="empty-state">
+                                <p style="color: var(--text-muted); font-size: 1rem;">데이터가 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+                {{else}}
+                <thead>
+                    <tr>
+                        <th class="col-index">순서</th>
+                        <th>업체명</th>
+                        <th>CONTAINER</th>
+                        <th>사이즈</th>
+                        <th>상태</th>
+                        <th>작업일</th>
+                        <th>비고</th>
+                        <th style="width: 150px; text-align: center;">출고처리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $idx, $item := .Data.Items}}
+                    <tr>
+                        <td class="col-index">{{add $pager.Offset (add $idx 1)}}</td>
+                        <td>{{$item.SupplierName}}</td>
+                        <td><span class="container-no">{{$item.ContainerNo}}</span></td>
+                        <td><span class="status-pill status-pill--info">{{$item.ContainerTypeCode}}</span></td>
+                        <td><span class="status-pill">{{$item.ContainerStatus}}</span></td>
+                        <td>{{formatDate $item.ProcessingDate}}</td>
+                        <td>{{$item.Memo}}</td>
+                        <td style="text-align: center;">
+                            <form method="POST" action="/admin/io_management/{{$item.ID}}/outbound"
+                                style="display:inline" hx-boost="false" onsubmit="return confirm('출고등록 하시겠습니까?')">
+                                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                                <button type="submit" class="btn btn-primary btn-sm">출고등록</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 5rem 0;">
+                            <div class="empty-state">
+                                <p style="color: var(--text-muted); font-size: 1rem;">데이터가 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+                {{end}}
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="pagination">
+    {{if gt $pager.TotalPages 1}}
+    {{if gt $pager.CurrentPage 1}}
+    <a href="?tab={{urlquery $tab}}&page=1" class="page-link" title="First">&laquo;</a>
+    <a href="?tab={{urlquery $tab}}&page={{add $pager.CurrentPage -1}}" class="page-link" title="Previous">&lsaquo;</a>
+    {{end}}
+
+    {{range $p := $pager.Pages}}
+    <a href="?tab={{urlquery $tab}}&page={{$p}}"
+        class="page-link {{if eq $p $pager.CurrentPage}}active{{end}}">{{$p}}</a>
+    {{end}}
+
+    {{if lt $pager.CurrentPage $pager.TotalPages}}
+    <a href="?tab={{urlquery $tab}}&page={{add $pager.CurrentPage 1}}" class="page-link" title="Next">&rsaquo;</a>
+    <a href="?tab={{urlquery $tab}}&page={{$pager.TotalPages}}" class="page-link" title="Last">&raquo;</a>
+    {{end}}
+    {{end}}
+</div>
+
+{{else}}
+<div class="page-header">
+    <div class="title-section">
+        <h1>입출고관리</h1>
+        <p class="subtitle">컨테이너 입고, 작업, 출고 현황을 관리합니다.</p>
+    </div>
+</div>
+
+<div class="tabs-container">
+    <div class="tabs-header">
+        <a class="tab-btn active" href="/admin/io_management?tab=inbound">입고예정</a>
+        <a class="tab-btn" href="/admin/io_management?tab=work">작업확인</a>
+        <a class="tab-btn" href="/admin/io_management?tab=outbound">출고처리</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>입고예정 컨테이너 리스트</h3>
+        </div>
+        <div class="table-container">
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center; padding: 5rem 0;">
+                            <div class="empty-state">
+                                <p style="color: var(--text-muted); font-size: 1rem;">데이터가 없습니다.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
+
+<style>
+    .page-header {
+        margin-bottom: 1rem;
+    }
+
+    .title-section h1 {
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .tabs-header {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: none;
+    }
+
+    .tab-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--surface-2);
+        border: 1px solid var(--border);
+        padding: 0.75rem 1.75rem;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 999px;
+        text-decoration: none;
+    }
+
+    .tab-btn:hover {
+        background-color: var(--border);
+        color: var(--text-main);
+        transform: translateY(-1px);
+    }
+
+    .tab-btn.active {
+        background-color: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px var(--primary-soft);
+        font-weight: 600;
+    }
+
+    .table-container th.col-index,
+    .table-container td.col-index {
+        width: 80px;
+        min-width: 80px;
+        text-align: center;
+        white-space: nowrap;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .table-container th.col-index {
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+
+    .container-no {
+        font-weight: 500;
+        font-family: inherit;
+    }
+
+    .btn {
+        white-space: nowrap;
+    }
+</style>
+{{end}}

@@ -1,0 +1,347 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+{{$pager := .Data.Pager}}
+<div
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 0.75rem;">
+    <h1>{{.Title}}</h1>
+</div>
+{{if canAccess .User "create" "bl_markings"}}
+<div class="table-container" style="padding: 1.5rem; margin-bottom: 2rem;">
+    <form method="POST" action="/admin/bl_markings/upload" enctype="multipart/form-data" hx-boost="false">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <input type="hidden" id="container_id" name="container_id" value="">
+        <input type="hidden" id="container_no_value" name="container_no_value" value="">
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 240px;">
+                <label for="container_no">컨테이너 번호</label>
+                <input type="text" id="container_no" name="container_no" placeholder="컨테이너 번호를 입력하세요" required>
+                <div id="container_no_status" class="input-status" aria-live="polite"></div>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
+                    입력 즉시 등록 여부를 확인합니다. 출고된 컨테이너는 등록할 수 없습니다.
+                </small>
+            </div>
+            <div style="flex: 1.2; min-width: 260px;">
+                <label for="bl_marking_file">xlsx 파일</label>
+                <input type="file" id="bl_marking_file" name="file" accept=".xlsx" required>
+                <div id="bl_marking_file_status" class="input-status" aria-live="polite"></div>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
+                    형식: hblno, marks (첫 행이 헤더면 자동 인식). BL 포지션은 이후에 관리자가 수동 지정합니다.
+                </small>
+            </div>
+        </div>
+        <div style="margin-top: 1.25rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary" id="bl_marking_upload_btn" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                엑셀 업로드
+            </button>
+            <span id="upload_ready_status" class="status-pill"></span>
+        </div>
+    </form>
+</div>
+{{end}}
+<div class="table-container" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+    <form method="GET" action="/admin/bl_markings">
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 1; min-width: 220px;">
+                <label for="search_container_no">컨테이너 번호</label>
+                <input type="text" id="search_container_no" name="container_no" value="{{.Data.ContainerNo}}"
+                    placeholder="컨테이너 번호를 입력하세요">
+            </div>
+            <div style="flex: 1; min-width: 220px;">
+                <label for="search_hbl_no">HBL 번호</label>
+                <input type="text" id="search_hbl_no" name="hbl_no" value="{{.Data.HBLNo}}" placeholder="HBL 번호를 입력하세요">
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 200px; padding-bottom: 0.35rem;">
+                <input type="checkbox" id="search_unassigned_only" name="unassigned_only" value="1" {{if
+                    .Data.UnassignedOnly}}checked{{end}}>
+                <label for="search_unassigned_only" style="margin: 0;">BL 포지션 미지정만</label>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <button type="submit" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    검색
+                </button>
+                <a href="/admin/bl_markings" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                    </svg>
+                    초기화
+                </a>
+            </div>
+        </div>
+        <div style="margin-top: 0.75rem; color: var(--text-main); font-weight: 600;">
+            검색 결과 {{$pager.TotalItems}}건
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 80px; white-space: nowrap; text-align: center;">순서</th>
+                <th>컨테이너 번호</th>
+                <th>BL 포지션</th>
+                <th>HBL 번호</th>
+                <th>Marks</th>
+                <th>사용자</th>
+                <th>생성일</th>
+                <th>상태</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $idx, $item := .Data.Items}}
+            <tr id="blm-row-{{$item.ID}}">
+                <td style="white-space: nowrap; text-align: center;">{{add (add $pager.Offset $idx) 1}}</td>
+                <td>{{$item.ContainerNo}}</td>
+                <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
+                <td style="font-weight: 600;">{{$item.HBLNo}}</td>
+                <td>{{$item.Marks}}</td>
+                <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
+                <td>{{formatDate $item.CreatedAt}}</td>
+                <td>
+                    {{if $item.IsActive}}
+                    <span
+                        style="color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;">활성</span>
+                    {{else}}
+                    <span
+                        style="color: var(--danger); background: rgba(239, 68, 68, 0.1); padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;">비활성</span>
+                    {{end}}
+                </td>
+                <td>
+                    {{if or (canAccess $.User "update" "bl_markings" $item.UserID) (canAccess $.User "delete" "bl_markings" $item.UserID)}}
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        {{if canAccess $.User "update" "bl_markings" $item.UserID}}
+                        <form method="POST" action="/admin/bl_markings/{{$item.ID}}/status" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <label class="switch" style="transform: scale(0.9); transform-origin: left center;">
+                                <input class="switch-input" type="checkbox" name="is_active" value="true" {{if
+                                    $item.IsActive}}checked{{end}} onchange="this.form.submit()" aria-label="상태 변경">
+                                <span class="switch-track" aria-hidden="true"></span>
+                            </label>
+                        </form>
+                        <button hx-get="/admin/bl_markings/{{$item.ID}}/edit" hx-target="#global-modal-body"
+                            class="btn btn-primary btn-sm">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                            </svg>
+                            수정
+                        </button>
+                        {{end}}
+                        {{if canAccess $.User "delete" "bl_markings" $item.UserID}}
+                        <button class="btn btn-danger btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"
+                            hx-delete="/admin/bl_markings/{{$item.ID}}" hx-confirm="정말 삭제하시겠습니까?"
+                            hx-target="#blm-row-{{$item.ID}}" hx-swap="outerHTML">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                            </svg>
+                            삭제
+                        </button>
+                        {{end}}
+                    </div>
+                    {{else}}
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">권한 없음</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination">
+    {{$containerNo := .Data.ContainerNo}}
+    {{$hblNo := .Data.HBLNo}}
+    {{$unassignedOnly := .Data.UnassignedOnly}}
+    {{if gt $pager.TotalPages 1}}
+    {{if gt $pager.CurrentPage 1}}
+    <a href="?page=1{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+        class="page-link">&lt;&lt;</a>
+    <a href="?page={{add $pager.CurrentPage -1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+        class="page-link">&lt;</a>
+    {{end}}
+
+    {{range $p := $pager.Pages}}
+    <a href="?page={{$p}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+        class="page-link {{if eq $p $pager.CurrentPage}}active{{end}}">{{$p}}</a>
+    {{end}}
+
+    {{if lt $pager.CurrentPage $pager.TotalPages}}
+    <a href="?page={{add $pager.CurrentPage 1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+        class="page-link">&gt;</a>
+    <a href="?page={{$pager.TotalPages}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+        class="page-link">&gt;&gt;</a>
+    {{end}}
+    {{end}}
+</div>
+<script>
+    (function () {
+        var input = document.getElementById("container_no");
+        var status = document.getElementById("container_no_status");
+        var uploadBtn = document.getElementById("bl_marking_upload_btn");
+        var fileInput = document.getElementById("bl_marking_file");
+        var fileStatus = document.getElementById("bl_marking_file_status");
+        var readyStatus = document.getElementById("upload_ready_status");
+        var containerIDInput = document.getElementById("container_id");
+        var containerNoValue = document.getElementById("container_no_value");
+        if (!input || !status || !uploadBtn || !fileInput || !fileStatus || !readyStatus || !containerIDInput || !containerNoValue) {
+            return;
+        }
+
+        var timer;
+        var lastValue = "";
+        var containerOk = false;
+        var fileOk = false;
+
+        var setStatus = function (state, message) {
+            status.className = "input-status" + (state ? " " + state : "");
+            status.textContent = message || "";
+        };
+
+        var setSubmitEnabled = function (enabled) {
+            if (enabled) {
+                uploadBtn.removeAttribute("disabled");
+            } else {
+                uploadBtn.setAttribute("disabled", "disabled");
+            }
+        };
+
+        var setFileStatus = function (state, message) {
+            fileStatus.className = "input-status" + (state ? " " + state : "");
+            fileStatus.textContent = message || "";
+        };
+
+        var setReadyStatus = function (state, message) {
+            readyStatus.className = "status-pill" + (state ? " " + state : "");
+            readyStatus.textContent = message || "";
+        };
+
+        var updateButton = function () {
+            if (containerOk && fileOk) {
+                setSubmitEnabled(true);
+                setReadyStatus("ok", "업로드 준비 완료");
+                return;
+            }
+
+            setSubmitEnabled(false);
+            var containerValue = input.value.trim();
+            if (!containerValue && !fileOk) {
+                setReadyStatus("", "컨테이너 번호와 파일이 필요합니다.");
+                return;
+            }
+            if (!containerValue) {
+                setReadyStatus("error", "컨테이너 번호를 입력해 주세요.");
+                return;
+            }
+            if (!containerOk) {
+                setReadyStatus("error", "컨테이너 번호 확인이 필요합니다.");
+                return;
+            }
+            if (!fileOk) {
+                setReadyStatus("error", "파일을 선택해 주세요.");
+            }
+        };
+
+        var validate = function () {
+            var value = input.value.trim();
+            containerNoValue.value = value;
+            if (value === "") {
+                setStatus("", "");
+                containerOk = false;
+                containerIDInput.value = "";
+                updateButton();
+                return;
+            }
+            if (value === lastValue && status.classList.contains("ok")) {
+                containerOk = true;
+                updateButton();
+                return;
+            }
+            lastValue = value;
+            setStatus("loading", "확인 중...");
+            containerOk = false;
+            updateButton();
+            fetch("/admin/bl_markings/validate-container?container_no=" + encodeURIComponent(value))
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("request failed");
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (input.value.trim() !== value) {
+                        return;
+                    }
+                    if (data && data.ok) {
+                        setStatus("ok", data.message || "사용 가능한 컨테이너입니다.");
+                        containerOk = true;
+                        containerIDInput.value = data.container_id || "";
+                    } else {
+                        setStatus("error", (data && data.message) || "사용할 수 없는 컨테이너입니다.");
+                        containerOk = false;
+                        containerIDInput.value = "";
+                    }
+                    updateButton();
+                })
+                .catch(function () {
+                    if (input.value.trim() !== value) {
+                        return;
+                    }
+                    setStatus("error", "확인 중 오류가 발생했습니다.");
+                    containerOk = false;
+                    containerIDInput.value = "";
+                    updateButton();
+                });
+        };
+
+        input.addEventListener("input", function () {
+            clearTimeout(timer);
+            containerOk = false;
+            containerIDInput.value = "";
+            containerNoValue.value = input.value.trim();
+            updateButton();
+            timer = setTimeout(validate, 350);
+        });
+        input.addEventListener("blur", validate);
+
+        fileInput.addEventListener("change", function () {
+            fileOk = fileInput.files && fileInput.files.length > 0;
+            if (fileOk) {
+                setFileStatus("ok", "파일 선택: " + fileInput.files[0].name);
+            } else {
+                setFileStatus("", "파일을 선택해 주세요.");
+            }
+            updateButton();
+        });
+
+        fileOk = fileInput.files && fileInput.files.length > 0;
+        if (fileOk) {
+            setFileStatus("ok", "파일 선택: " + fileInput.files[0].name);
+        } else {
+            setFileStatus("", "파일을 선택해 주세요.");
+        }
+        updateButton();
+    })();
+</script>
+{{end}}

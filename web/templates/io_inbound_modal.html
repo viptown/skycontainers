@@ -1,0 +1,67 @@
+{{define "content"}}
+<h1 style="display:none">입고 등록</h1>
+<div style="text-align: center; padding: 1rem 0;">
+    <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 700;">컨테이너 사이즈 선택</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
+        작은 선택이 회사의 이윤과 직결적으로 연관되오니<br>
+        명심해주십시요.!!!
+    </p>
+
+    <div class="grid-buttons"
+        style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; max-width: 750px; margin: 0 auto;">
+        {{range .Data.Types}}
+        {{$cls := "btn-blue"}}
+        {{if eq .LengthFT 20}}{{$cls = "btn-green"}}{{end}}
+        {{if eq .LengthFT 40}}{{$cls = "btn-red"}}{{end}}
+        {{if eq .LengthFT 45}}{{$cls = "btn-orange"}}{{end}}
+        {{if eq .LengthFT 48}}{{$cls = "btn-purple"}}{{end}}
+
+        <button type="button" class="btn-size {{$cls}}" hx-post="/admin/io_management/{{$.Data.ContainerID}}/inbound"
+            hx-vals='{"type_id": "{{.ID}}"}' hx-swap="none"
+            hx-on:htmx:after-request="if(event.detail.successful) window.location.reload()">
+            {{.Code}}
+        </button>
+        {{end}}
+    </div>
+</div>
+
+<style>
+    .btn-size {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 48px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+    .btn-size:active {
+        transform: scale(0.95);
+    }
+
+    .btn-green {
+        background-color: #2ecc71;
+    }
+
+    .btn-red {
+        background-color: #e74c3c;
+    }
+
+    .btn-orange {
+        background-color: #f39c12;
+    }
+
+    .btn-purple {
+        background-color: #9b59b6;
+    }
+
+    .btn-blue {
+        background-color: #3498db;
+    }
+</style>
+{{end}}

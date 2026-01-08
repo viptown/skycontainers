@@ -1,0 +1,163 @@
+{{template "layout_mobile.html" .}}
+
+{{define "header"}}BL 찾기{{end}}
+
+{{define "content"}}
+<div class="search-container">
+    <div id="secure-warning" class="toast toast-error" role="alert" style="display:none; margin-bottom: 1rem;">
+        <div class="toast-body">
+            카메라 스캔은 HTTPS(보안 연결)에서만 동작합니다.
+        </div>
+    </div>
+    <div id="reader-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000;">
+        <div id="reader" style="width:100%; height:80%;"></div>
+        <button onclick="stopCamera()" class="btn btn-danger"
+            style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width: 80%;">닫기</button>
+    </div>
+
+    <form hx-get="/mobile/search_result" hx-target="#search-result" hx-indicator="#loading">
+        <div class="form-group">
+            <label class="form-label">HBL 번호</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="hbl_no" name="hbl_no" class="form-input" placeholder="HBL 번호 입력" required>
+                <button type="button" class="btn btn-secondary" onclick="startCamera()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg"
+            style="width: 100%; margin-top: 1rem;">검색</button>
+    </form>
+
+    <div id="loading" class="htmx-indicator" style="text-align:center; padding: 2rem;">검색 중...</div>
+    <div id="search-result" style="margin-top: 2rem;"></div>
+</div>
+
+<script>
+    var html5QrcodeScanner = null;
+
+    function isLocalhost() {
+        return location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    }
+
+    function showSecureWarning(messageHtml) {
+        var warning = document.getElementById("secure-warning");
+        if (!warning) {
+            return;
+        }
+        if (messageHtml) {
+            warning.querySelector(".toast-body").innerHTML = messageHtml;
+        }
+        warning.style.display = "block";
+    }
+
+    function canUseCamera() {
+        if (window.isSecureContext) {
+            return true;
+        }
+        return isLocalhost();
+    }
+
+    function ensureCameraAllowed() {
+        if (!canUseCamera()) {
+            showSecureWarning("카메라 스캔은 <strong>HTTPS(보안 연결)</strong>에서만 동작합니다. 현재는 <strong>HTTP</strong> 접속이라 브라우저가 카메라를 차단했습니다.");
+            return false;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showSecureWarning("이 브라우저/환경에서는 카메라 기능을 사용할 수 없습니다.");
+            return false;
+        }
+        if (!window.Html5Qrcode) {
+            showSecureWarning("스캔 라이브러리를 불러오지 못했습니다. 네트워크 상태를 확인해 주세요.");
+            return false;
+        }
+        return true;
+    }
+
+    if (!canUseCamera()) {
+        showSecureWarning("카메라 스캔은 <strong>HTTPS(보안 연결)</strong>에서만 동작합니다. 현재는 <strong>HTTP</strong> 접속이라 브라우저가 카메라를 차단했습니다.");
+    }
+
+    function startCamera() {
+        if (!ensureCameraAllowed()) {
+            return;
+        }
+        document.getElementById('reader-modal').style.display = 'block';        
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    }
+
+    function stopCamera() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                document.getElementById('reader-modal').style.display = 'none';
+            }).catch(err => console.log(err));
+        } else {
+            document.getElementById('reader-modal').style.display = 'none';
+        }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('hbl_no').value = decodedText;
+        stopCamera();
+        // create a fake submit event or just find button?
+        // document.querySelector('form').requestSubmit();
+    }
+</script>
+
+<style>
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .form-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface-2);
+        color: var(--text-main);
+        font-size: 1rem;
+    }
+
+    .result-card {
+        background: var(--surface-2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid var(--border);
+    }
+
+    .supplier-name {
+        font-size: 1.3rem;
+        /* Increased from 1rem */
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .position-name {
+        font-size: 3.5rem;
+        /* Increased from 3rem */
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1.2;
+    }
+</style>
+{{end}}

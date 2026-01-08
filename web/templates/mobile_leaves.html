@@ -1,0 +1,121 @@
+{{template "layout_mobile.html" .}}
+
+{{define "header"}}휴가신청{{end}}
+
+{{define "content"}}
+<div class="leaves-container">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <a href="/mobile/leaves/new" class="btn btn-primary">
+            + 휴가 신청
+        </a>
+    </div>
+
+    <div class="leave-list">
+        {{range .Data.Items}}
+        <div class="leave-card">
+            <div class="leave-header">
+                <span class="leave-type badge {{if eq .Types " 2"}}badge-success{{else}}badge-warning{{end}}">
+                    {{reportTypeLabel .Types}}
+                </span>
+                <span class="leave-date">{{formatDate .CreatedAt}}</span>
+            </div>
+            <h3 class="leave-subject">{{.Subject}}</h3>
+            <div class="leave-period">
+                {{formatDate .PeriodStart}} ~ {{formatDate .PeriodEnd}}
+            </div>
+        </div>
+        {{else}}
+        <div class="empty-state">
+            <p>신청 내역이 없습니다.</p>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Pager -->
+    {{$pager := .Data.Pager}}
+    {{if gt $pager.TotalPages 1}}
+    <div class="pagination" style="justify-content: center; margin-top: 2rem;">
+        {{if gt $pager.CurrentPage 1}}
+        <a href="?page={{add $pager.CurrentPage -1}}" class="page-link">&lt;</a>
+        {{end}}
+        <span class="page-link active">{{$pager.CurrentPage}} / {{$pager.TotalPages}}</span>
+        {{if lt $pager.CurrentPage $pager.TotalPages}}
+        <a href="?page={{add $pager.CurrentPage 1}}" class="page-link">&gt;</a>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+
+<style>
+    .leave-card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        /* Increased padding */
+        margin-bottom: 1rem;
+    }
+
+    .leave-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .leave-type {
+        font-size: 0.95rem;
+        /* Increased from 0.8rem */
+        font-weight: 600;
+    }
+
+    .leave-date {
+        font-size: 0.95rem;
+        /* Increased from 0.8rem */
+        color: var(--text-muted);
+    }
+
+    .leave-subject {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.2rem;
+        /* Increased from 1rem */
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .leave-period {
+        font-size: 1.05rem;
+        /* Increased from 0.9rem */
+        color: var(--text-muted);
+    }
+
+    .empty-state {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem;
+        font-size: 1.1rem;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .page-link {
+        padding: 0.75rem 1.25rem;
+        /* Increased padding */
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        text-decoration: none;
+        color: var(--text-main);
+        font-size: 1.05rem;
+        /* Larger font */
+    }
+
+    .page-link.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+</style>
+{{end}}

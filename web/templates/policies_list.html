@@ -1,0 +1,380 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+
+<style>
+    /* Local styles for the tabbed interface */
+    .role-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0;
+        border-bottom: 2px solid var(--border);
+        overflow-x: auto;
+        padding-bottom: 0;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+        color: var(--primary);
+    }
+
+    .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .role-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .role-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .policy-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-top: none;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .role-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+    }
+
+    .role-title {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--text-main);
+    }
+
+    .role-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tooltip {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .tooltip-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-muted);
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .tooltip-text {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: 0;
+        width: 240px;
+        padding: 0.7rem 0.8rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-main);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        box-shadow: var(--shadow-sm);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-4px);
+        transition: all 0.2s ease;
+        z-index: 20;
+    }
+
+    .tooltip:focus-within .tooltip-text,
+    .tooltip:hover .tooltip-text {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .policy-alert {
+        display: flex;
+        gap: 0.8rem;
+        align-items: flex-start;
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px dashed rgba(59, 130, 246, 0.35);
+        padding: 1rem 1.2rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+    }
+
+    .policy-alert .alert-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .policy-alert .alert-title {
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.2rem;
+    }
+
+    .role-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        z-index: 1400;
+    }
+
+    .role-modal.show {
+        display: flex;
+    }
+
+    .role-modal-content {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        width: min(520px, 92vw);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .role-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .role-modal-close {
+        border: none;
+        background: transparent;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+    }
+</style>
+
+<div class="page-header">
+    <div class="header-title">
+        <h1>{{.Title}}</h1>
+        <p class="subtitle">역할별 페이지 접근 및 CRUD 권한을 세밀하게 설정합니다. 총관리자는 항상 허용되며, 사원 수정/삭제는 본인 데이터에만 적용됩니다.</p>
+    </div>
+</div>
+
+<form method="POST" action="/admin/policies">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    {{$roles := .Data.Roles}}
+    {{$resources := .Data.Resources}}
+    {{$actions := .Data.Actions}}
+    {{$allowed := .Data.Allowed}}
+
+    <!-- Tabs Header -->
+    <div class="role-tabs">
+        {{range $index, $role := $roles}}
+        <button type="button" class="tab-btn {{if eq $index 0}}active{{end}}"
+            onclick="switchTab('{{$role.Key}}', this)">
+            {{$role.Label}}
+        </button>
+        {{end}}
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="policy-card">
+        {{range $index, $role := $roles}}
+        <div id="role-{{$role.Key}}" class="role-content {{if eq $index 0}}active{{end}}">
+
+            <div class="role-header">
+                <div class="role-title">{{$role.Label}}</div>
+                <div class="role-actions">
+                    <span class="tooltip">
+                        <button type="button" class="tooltip-btn" aria-label="{{$role.Label}} 요약">?</button>
+                        <span class="tooltip-text">{{$role.Summary}}</span>
+                    </span>
+                    <button type="button" class="btn btn-secondary btn-sm" data-role-modal-open="{{$role.Key}}">
+                        상세보기
+                    </button>
+                </div>
+            </div>
+
+            <div class="policy-alert">
+                <div class="alert-icon">!</div>
+                <div>
+                    <div class="alert-title">예외 규칙</div>
+                    <div>{{$role.Exception}}</div>
+                </div>
+            </div>
+
+            <div class="table-container" style="box-shadow: none; border: 1px solid var(--border);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">페이지 / 리소스</th>
+                            {{range $actions}}
+                            <th style="text-align: center; width: 100px;">{{.Label}}</th>
+                            {{end}}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $res := $resources}}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600;">{{$res.Label}}</div>
+                            </td>
+                            {{range $act := $actions}}
+                            {{$key := printf "%s::%s::%s" $role.Key $res.Key $act.Key}}
+                            <td style="text-align: center;">
+                                <label class="switch" style="justify-content: center;">
+                                    <input type="checkbox" class="switch-input" name="{{$key}}" value="1" {{if index
+                                        $allowed $key}}checked{{end}} {{if $role.Locked}}disabled{{end}}>
+                                    <span class="switch-track"></span>
+                                </label>
+                            </td>
+                            {{end}}
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="role-modal" data-role-modal="{{$role.Key}}">
+                <div class="role-modal-content" role="dialog" aria-modal="true"
+                    aria-labelledby="role-modal-title-{{$role.Key}}">
+                    <div class="role-modal-header">
+                        <h3 id="role-modal-title-{{$role.Key}}">{{$role.Label}} 권한 설명</h3>
+                        <button type="button" class="role-modal-close" data-role-modal-close aria-label="닫기">
+                            &times;
+                        </button>
+                    </div>
+                    <p style="color: var(--text-muted); line-height: 1.6;">{{$role.Detail}}</p>
+                </div>
+            </div>
+        </div>
+        {{end}}
+
+        <div
+            style="margin-top: 2rem; display: flex; justify-content: flex-end; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <button type="submit" class="btn btn-primary" style="min-width: 120px; justify-content: center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                변경사항 저장
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    function switchTab(roleKey, btnElement) {
+        // Hide all contents
+        document.querySelectorAll('.role-content').forEach(el => el.classList.remove('active'));
+
+        // Remove active class from all buttons
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        // Show selected content
+        document.getElementById('role-' + roleKey).classList.add('active');
+
+        // Activate button
+        btnElement.classList.add('active');
+    }
+
+    function openRoleModal(roleKey) {
+        var modal = document.querySelector('[data-role-modal=\"' + roleKey + '\"]');
+        if (!modal) {
+            return;
+        }
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        var closeBtn = modal.querySelector('[data-role-modal-close]');
+        if (closeBtn) {
+            closeBtn.focus();
+        }
+    }
+
+    function closeRoleModal(modal) {
+        if (!modal) {
+            return;
+        }
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('[data-role-modal-open]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openRoleModal(btn.getAttribute('data-role-modal-open'));
+        });
+    });
+
+    document.querySelectorAll('[data-role-modal]').forEach(function (modal) {
+        modal.addEventListener('click', function (evt) {
+            if (evt.target === modal) {
+                closeRoleModal(modal);
+            }
+        });
+        var closeBtn = modal.querySelector('[data-role-modal-close]');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                closeRoleModal(modal);
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function (evt) {
+        if (evt.key !== 'Escape') {
+            return;
+        }
+        document.querySelectorAll('[data-role-modal].show').forEach(function (modal) {
+            closeRoleModal(modal);
+        });
+    });
+</script>
+
+{{end}}

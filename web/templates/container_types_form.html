@@ -1,0 +1,42 @@
+{{define "content"}}
+{{$isEdit := and .Data (gt .Data.ID 0)}}
+<form hx-post="{{if $isEdit}}/admin/container_types/{{.Data.ID}}/edit{{else}}/admin/container_types{{end}}"
+    hx-push-url="false">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <h1 style="display:none">{{.Title}}</h1>
+
+    <div class="form-group">
+        <label for="code">컨테이너 코드 (Code)</label>
+        <input type="text" id="code" name="code" value="{{if .Data}}{{.Data.Code}}{{end}}" required
+            placeholder="예: 20GP">
+    </div>
+
+    <div class="form-group">
+        <label for="name">규격명 (Name)</label>
+        <input type="text" id="name" name="name" value="{{if .Data}}{{.Data.Name}}{{end}}" required
+            placeholder="예: 20ft General Purpose">
+    </div>
+
+    <div class="form-group">
+        <label for="length_ft">길이 (Length ft)</label>
+        <input type="number" id="length_ft" name="length_ft" value="{{if .Data}}{{.Data.LengthFT}}{{end}}" required
+            placeholder="20">
+    </div>
+
+    <div class="form-group">
+        <label for="soft_order">정렬 순서 (Sort Order)</label>
+        <input type="number" id="soft_order" name="soft_order" value="{{if .Data}}{{.Data.SoftOrder}}{{else}}10{{end}}"
+            required>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 1rem;">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            {{if $isEdit}}정보 수정{{else}}신규 등록{{end}}
+        </button>
+    </div>
+</form>
+{{end}}

@@ -1,0 +1,124 @@
+{{template "layout_mobile.html" .}}
+
+{{define "header"}}위치등록{{end}}
+
+{{define "content"}}
+<div class="scan-container">
+    <div id="secure-warning" class="toast toast-error" role="alert" style="display:none; margin-bottom: 1rem;">
+        <div class="toast-body">
+            카메라 스캔은 HTTPS(보안 연결)에서만 동작합니다.
+        </div>
+    </div>
+    <div id="reader"
+        style="width: 100%; min-height: 250px; background: #000; margin-bottom: 1rem; border-radius: 8px; overflow: hidden;">
+    </div>
+
+    <form id="scan-form" hx-post="/mobile/scan" hx-target="#result-area" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+        <div class="form-group">
+            <label class="form-label">BL 포지션</label>
+            <select name="position_id" class="form-select" required>
+                <option value="">포지션 선택</option>
+                {{range .Data.Positions}}
+                <option value="{{.ID}}">{{.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">HBL 번호</label>
+            <input type="text" id="hbl_no" name="hbl_no" class="form-input" placeholder="바코드 스캔 또는 입력" required>
+            <div id="hbl-status" class="input-status"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg"
+            style="width: 100%; margin-top: 1rem;">저장</button>
+    </form>
+
+    <div id="result-area" style="margin-top: 1rem;"></div>
+</div>
+
+<script>
+    function isLocalhost() {
+        return location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    }
+
+    function showSecureWarning(messageHtml) {
+        var warning = document.getElementById("secure-warning");
+        if (warning) {
+            if (messageHtml) {
+                warning.querySelector(".toast-body").innerHTML = messageHtml;
+            }
+            warning.style.display = "block";
+        }
+
+        var reader = document.getElementById("reader");
+        if (reader) {
+            reader.style.background = "transparent";
+            reader.innerHTML =
+                "<div style='padding: 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-main);'>" +
+                "카메라를 사용할 수 없습니다.<br>" +
+                "<span style='color: var(--text-muted); font-size: 0.95rem;'>HTTPS로 접속하거나(권장), HBL 번호를 직접 입력해 주세요.</span>" +
+                "</div>";
+        }
+    }
+
+    function canUseCamera() {
+        if (window.isSecureContext) {
+            return true;
+        }
+        return isLocalhost();
+    }
+
+    if (!canUseCamera()) {
+        showSecureWarning("카메라 스캔은 <strong>HTTPS(보안 연결)</strong>에서만 동작합니다. 현재는 <strong>HTTP</strong> 접속이라 브라우저가 카메라를 차단했습니다.");
+    } else if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showSecureWarning("이 브라우저/환경에서는 카메라 기능을 사용할 수 없습니다.");
+    } else if (!window.Html5Qrcode) {
+        showSecureWarning("스캔 라이브러리를 불러오지 못했습니다. 네트워크 상태를 확인해 주세요.");
+    } else {
+        var html5QrcodeScanner = new Html5Qrcode("reader");
+        var config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (document.getElementById("hbl_no").value !== decodedText) {
+                document.getElementById("hbl_no").value = decodedText;
+                htmx.ajax("POST", "/mobile/check_hbl", { target: "#hbl-status", values: { hbl_no: decodedText } });
+            }
+        }
+
+        html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+            .catch(function (err) {
+                console.log("Camera start error: ", err);
+                showSecureWarning("카메라를 시작할 수 없습니다. 브라우저 권한 설정을 확인해 주세요.");
+            });
+    }
+</script>
+
+<style>
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        color: var(--text-main);
+    }
+
+    .input-status {
+        margin-top: 0.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .input-status.error {
+        color: #ef4444;
+    }
+
+    .input-status.ok {
+        color: #10b981;
+    }
+</style>
+{{end}}
