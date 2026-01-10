@@ -57,9 +57,32 @@ func PostCreateBLPosition(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "로그인 사용자 정보를 찾을 수 없습니다.", http.StatusUnauthorized)
 		return
 	}
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		view.Render(w, r, "bl_positions_form.html", view.PageData{
+			Title: "BL 포지션 등록",
+			Error: "이름을 입력해 주세요.",
+			Data:  repo.BLPosition{Name: name},
+		})
+		return
+	}
+	repoItem := repo.BLPosition{}
+	exists, err := repoItem.ExistsByName(r.Context(), name, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		view.Render(w, r, "bl_positions_form.html", view.PageData{
+			Title: "BL 포지션 등록",
+			Error: "같은 이름의 BL 포지션이 이미 있습니다.",
+			Data:  repo.BLPosition{Name: name},
+		})
+		return
+	}
 
 	item := repo.BLPosition{
-		Name:     r.FormValue("name"),
+		Name:     name,
 		IsActive: true,
 		UserID:   userID,
 	}
@@ -110,10 +133,32 @@ func PostUpdateBLPosition(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "로그인 사용자 정보를 찾을 수 없습니다.", http.StatusUnauthorized)
 		return
 	}
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		view.Render(w, r, "bl_positions_form.html", view.PageData{
+			Title: "BL 포지션 수정",
+			Error: "이름을 입력해 주세요.",
+			Data:  repo.BLPosition{ID: id, Name: name, IsActive: existing.IsActive},
+		})
+		return
+	}
+	exists, err := repoItem.ExistsByName(r.Context(), name, &id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		view.Render(w, r, "bl_positions_form.html", view.PageData{
+			Title: "BL 포지션 수정",
+			Error: "같은 이름의 BL 포지션이 이미 있습니다.",
+			Data:  repo.BLPosition{ID: id, Name: name, IsActive: existing.IsActive},
+		})
+		return
+	}
 
 	item := repo.BLPosition{
 		ID:       id,
-		Name:     r.FormValue("name"),
+		Name:     name,
 		IsActive: existing.IsActive,
 		UserID:   userID,
 	}

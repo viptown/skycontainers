@@ -4,6 +4,13 @@
     hx-push-url="false">
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
     <h1 style="display:none">{{.Title}}</h1>
+    {{if .Error}}
+    <div class="toast toast-error" style="margin-bottom: 1rem;">
+        <div class="toast-body">
+            <div class="toast-message">{{.Error}}</div>
+        </div>
+    </div>
+    {{end}}
 
     <div class="form-group">
         <label for="name">이름</label>

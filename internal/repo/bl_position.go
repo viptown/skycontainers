@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"skycontainers/internal/pagination"
+	"strings"
 	"time"
 )
 
@@ -121,6 +122,30 @@ func (r *BLPosition) Update(ctx context.Context) error {
 		r.ID,
 	)
 	return err
+}
+
+func (r *BLPosition) ExistsByName(ctx context.Context, name string, excludeID *int64) (bool, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return false, nil
+	}
+	var count int
+	if excludeID != nil {
+		err := DB.QueryRow(ctx,
+			`SELECT count(*) FROM bl_positions WHERE lower(name) = lower($1) AND id <> $2`,
+			name, *excludeID).Scan(&count)
+		if err != nil {
+			return false, err
+		}
+		return count > 0, nil
+	}
+	err := DB.QueryRow(ctx,
+		`SELECT count(*) FROM bl_positions WHERE lower(name) = lower($1)`,
+		name).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (r *BLPosition) Delete(ctx context.Context, id int64) error {

@@ -189,6 +189,7 @@ CREATE TABLE "bl_positions"(
 );
 ALTER TABLE
     "bl_positions" ADD PRIMARY KEY("id");
+CREATE UNIQUE INDEX "bl_positions_name_unique" ON "bl_positions"(lower("name"));
 ALTER TABLE
     "users" ADD CONSTRAINT "users_supplier_id_foreign" FOREIGN KEY("supplier_id") REFERENCES "suppliers"("id");
 ALTER TABLE
