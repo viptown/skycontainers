@@ -81,6 +81,17 @@ func InitTemplates() {
 			}
 			return strings.TrimSpace(value)
 		},
+		"truncateText": func(value string, limit int) string {
+			value = strings.TrimSpace(value)
+			if value == "" || limit <= 0 {
+				return value
+			}
+			runes := []rune(value)
+			if len(runes) <= limit {
+				return value
+			}
+			return strings.TrimSpace(string(runes[:limit])) + "..."
+		},
 		"reportTypeLabel": func(value string) string {
 			switch strings.TrimSpace(value) {
 			case "1":

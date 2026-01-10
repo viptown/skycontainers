@@ -127,7 +127,7 @@
                 <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
                 <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
-                <td>{{$item.Marks}}</td>
+                <td>{{truncateText $item.Marks 15}}</td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
                 <td>{{formatDate $item.CreatedAt}}</td>
                 <td>

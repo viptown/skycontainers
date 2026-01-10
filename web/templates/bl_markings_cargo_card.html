@@ -74,9 +74,6 @@
             </tr>
         </table>
     </section>
-    {{if ne $idx (add (len $items) -1)}}
-    <div class="page-break"></div>
-    {{end}}
     {{end}}
 </div>
 {{else}}
@@ -184,7 +181,7 @@
     }
 
     .cargo-card-marks {
-        font-size: 3.8rem !important;
+        font-size: 6rem !important;
         font-weight: 950;
         line-height: 1.1;
         padding: 1rem !important;
@@ -201,9 +198,6 @@
         word-break: break-word !important;
     }
 
-    .page-break {
-        page-break-after: always;
-    }
 
     @page {
         size: A4;

@@ -82,6 +82,7 @@ func buildCargoCard(item repo.BLMarking) cargoCardItem {
 		firstValue(values, "pckut"),
 	)
 	product := firstValue(values, "prnm", "prdtnm", "goodsnm", "gdsnm", "goodsname")
+	product = truncateRunes(product, 32)
 	containerNo := firstValue(values, "cntrno", "cntrno", "cntrno1", "container")
 	consignee := strings.TrimSpace(item.SupplierName)
 	forwarder := firstValue(values, "shcoflco", "frwrnm", "forwarder", "frwrdnm")
@@ -108,6 +109,18 @@ func buildCargoCard(item repo.BLMarking) cargoCardItem {
 		HasUnipass:    hasUnipass,
 		UnipassStatus: status,
 	}
+}
+
+func truncateRunes(value string, limit int) string {
+	value = strings.TrimSpace(value)
+	if limit <= 0 || value == "" {
+		return value
+	}
+	runes := []rune(value)
+	if len(runes) <= limit {
+		return value
+	}
+	return strings.TrimSpace(string(runes[:limit]))
 }
 
 func parseUnipassValues(xmlBody string) map[string]string {
