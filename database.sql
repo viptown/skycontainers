@@ -62,6 +62,7 @@ CREATE TABLE "suppliers"(
     "name" VARCHAR(255) NOT NULL,
     "tel" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
+    "color" VARCHAR(20),
     "is_active" BOOLEAN NOT NULL,
     "created_at" TIMESTAMP(0) WITH
         TIME zone NOT NULL,

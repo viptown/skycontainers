@@ -30,7 +30,8 @@ func ListBLMarkings(w http.ResponseWriter, r *http.Request) {
 	unassignedOnly := strings.EqualFold(r.URL.Query().Get("unassigned_only"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "true") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "on")
-	data, err := blMarkingPageData(r.Context(), page, containerNo, hblNo, unassignedOnly)
+	unipassStatus := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("unipass_status")))
+	data, err := blMarkingPageData(r.Context(), page, containerNo, hblNo, unassignedOnly, unipassStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -40,6 +41,71 @@ func ListBLMarkings(w http.ResponseWriter, r *http.Request) {
 		Title: "BL 마킹 관리",
 		Data:  data,
 	})
+}
+
+func PostDeleteBLMarkingsFiltered(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requirePermission(w, r, policy.ActionDelete, policy.ResourceBLMarkings, 0, "BL 마킹 관리"); !ok {
+		return
+	}
+
+	containerNo := strings.TrimSpace(r.FormValue("container_no"))
+	hblNo := strings.TrimSpace(r.FormValue("hbl_no"))
+	unassignedOnly := strings.EqualFold(r.FormValue("unassigned_only"), "1") ||
+		strings.EqualFold(r.FormValue("unassigned_only"), "true") ||
+		strings.EqualFold(r.FormValue("unassigned_only"), "on")
+	unipassStatus := strings.ToLower(strings.TrimSpace(r.FormValue("unipass_status")))
+
+	repoItem := repo.BLMarking{}
+	deleted, err := repoItem.DeleteByFilters(r.Context(), containerNo, hblNo, unassignedOnly)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	message := "삭제 완료: " + strconv.FormatInt(deleted, 10) + "건"
+	redirectWithSuccess(w, r, buildBLMarkingListURL(containerNo, hblNo, unassignedOnly, unipassStatus), message)
+}
+
+func PostApplyUnipassFiltered(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requirePermission(w, r, policy.ActionUpdate, policy.ResourceBLMarkings, 0, "BL 마킹 관리"); !ok {
+		return
+	}
+
+	containerNo := strings.TrimSpace(r.FormValue("container_no"))
+	hblNo := strings.TrimSpace(r.FormValue("hbl_no"))
+	unassignedOnly := strings.EqualFold(r.FormValue("unassigned_only"), "1") ||
+		strings.EqualFold(r.FormValue("unassigned_only"), "true") ||
+		strings.EqualFold(r.FormValue("unassigned_only"), "on")
+	unipassStatus := strings.ToLower(strings.TrimSpace(r.FormValue("unipass_status")))
+
+	repoItem := repo.BLMarking{}
+	targets, err := repoItem.ListForUnipassApply(r.Context(), containerNo, hblNo, unassignedOnly, unipassStatus)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(targets) == 0 {
+		redirectWithSuccess(w, r, buildBLMarkingListURL(containerNo, hblNo, unassignedOnly, unipassStatus), "적용할 항목이 없습니다.")
+		return
+	}
+
+	var updated int
+	var failed int
+	for _, target := range targets {
+		xmlBody, ok := fetchUnipassXML(r.Context(), target.HBLNo)
+		if !ok {
+			failed++
+			continue
+		}
+		if err := repoItem.UpdateUnipassXML(r.Context(), target.ID, &xmlBody); err != nil {
+			failed++
+			continue
+		}
+		updated++
+	}
+
+	message := "유니패스 적용 완료: 성공 " + strconv.Itoa(updated) + "건, 실패 " + strconv.Itoa(failed) + "건"
+	redirectWithSuccess(w, r, buildBLMarkingListURL(containerNo, hblNo, unassignedOnly, unipassStatus), message)
 }
 
 func ExportBLMarkings(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +118,10 @@ func ExportBLMarkings(w http.ResponseWriter, r *http.Request) {
 	unassignedOnly := strings.EqualFold(r.URL.Query().Get("unassigned_only"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "true") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "on")
+	unipassStatus := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("unipass_status")))
 
 	repoItem := repo.BLMarking{}
-	list, err := repoItem.ListForExport(r.Context(), containerNo, hblNo, unassignedOnly)
+	list, err := repoItem.ListForExport(r.Context(), containerNo, hblNo, unassignedOnly, unipassStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -304,10 +371,10 @@ func DeleteBLMarking(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func blMarkingPageData(ctx context.Context, page int, containerNo string, hblNo string, unassignedOnly bool) (map[string]interface{}, error) {
+func blMarkingPageData(ctx context.Context, page int, containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) (map[string]interface{}, error) {
 	pager := pagination.NewPager(0, page, 10)
 	repoItem := repo.BLMarking{}
-	list, total, err := repoItem.List(ctx, pager, containerNo, hblNo, unassignedOnly)
+	list, total, err := repoItem.List(ctx, pager, containerNo, hblNo, unassignedOnly, unipassStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -319,12 +386,13 @@ func blMarkingPageData(ctx context.Context, page int, containerNo string, hblNo 
 		"ContainerNo":    containerNo,
 		"HBLNo":          hblNo,
 		"UnassignedOnly": unassignedOnly,
-		"ExportURL":      buildBLMarkingExportURL(containerNo, hblNo, unassignedOnly),
-		"CargoCardURL":   buildBLMarkingCargoCardURL(containerNo, hblNo, unassignedOnly),
+		"UnipassStatus":  unipassStatus,
+		"ExportURL":      buildBLMarkingExportURL(containerNo, hblNo, unassignedOnly, unipassStatus),
+		"CargoCardURL":   buildBLMarkingCargoCardURL(containerNo, hblNo, unassignedOnly, unipassStatus),
 	}, nil
 }
 
-func buildBLMarkingExportURL(containerNo string, hblNo string, unassignedOnly bool) string {
+func buildBLMarkingExportURL(containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) string {
 	values := url.Values{}
 	if strings.TrimSpace(containerNo) != "" {
 		values.Set("container_no", strings.TrimSpace(containerNo))
@@ -334,6 +402,9 @@ func buildBLMarkingExportURL(containerNo string, hblNo string, unassignedOnly bo
 	}
 	if unassignedOnly {
 		values.Set("unassigned_only", "1")
+	}
+	if strings.EqualFold(unipassStatus, "y") || strings.EqualFold(unipassStatus, "n") {
+		values.Set("unipass_status", strings.ToLower(unipassStatus))
 	}
 	if len(values) == 0 {
 		return "/admin/bl_markings/export"
@@ -341,7 +412,7 @@ func buildBLMarkingExportURL(containerNo string, hblNo string, unassignedOnly bo
 	return "/admin/bl_markings/export?" + values.Encode()
 }
 
-func buildBLMarkingCargoCardURL(containerNo string, hblNo string, unassignedOnly bool) string {
+func buildBLMarkingCargoCardURL(containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) string {
 	values := url.Values{}
 	if strings.TrimSpace(containerNo) != "" {
 		values.Set("container_no", strings.TrimSpace(containerNo))
@@ -352,8 +423,31 @@ func buildBLMarkingCargoCardURL(containerNo string, hblNo string, unassignedOnly
 	if unassignedOnly {
 		values.Set("unassigned_only", "1")
 	}
+	if strings.EqualFold(unipassStatus, "y") || strings.EqualFold(unipassStatus, "n") {
+		values.Set("unipass_status", strings.ToLower(unipassStatus))
+	}
 	if len(values) == 0 {
 		return "/admin/bl_markings/cargo_card"
 	}
 	return "/admin/bl_markings/cargo_card?" + values.Encode()
+}
+
+func buildBLMarkingListURL(containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) string {
+	values := url.Values{}
+	if strings.TrimSpace(containerNo) != "" {
+		values.Set("container_no", strings.TrimSpace(containerNo))
+	}
+	if strings.TrimSpace(hblNo) != "" {
+		values.Set("hbl_no", strings.TrimSpace(hblNo))
+	}
+	if unassignedOnly {
+		values.Set("unassigned_only", "1")
+	}
+	if strings.EqualFold(unipassStatus, "y") || strings.EqualFold(unipassStatus, "n") {
+		values.Set("unipass_status", strings.ToLower(unipassStatus))
+	}
+	if len(values) == 0 {
+		return "/admin/bl_markings"
+	}
+	return "/admin/bl_markings?" + values.Encode()
 }

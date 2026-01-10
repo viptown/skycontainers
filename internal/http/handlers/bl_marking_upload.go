@@ -321,7 +321,7 @@ func isUnipassErrorBody(xmlBody string) bool {
 }
 
 func renderBLMarkingsListError(w http.ResponseWriter, r *http.Request, message string) {
-	data, err := blMarkingPageData(r.Context(), 1, "", "", false)
+	data, err := blMarkingPageData(r.Context(), 1, "", "", false, "")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

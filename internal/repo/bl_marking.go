@@ -24,11 +24,17 @@ type BLMarking struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	SupplierName   string
+	SupplierColor  string
 	FrmUnipass     *string
 	HasUnipass     bool
 }
 
-func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo string, hblNo string, unassignedOnly bool) ([]BLMarking, int, error) {
+type BLMarkingUnipassTarget struct {
+	ID    int64
+	HBLNo string
+}
+
+func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) ([]BLMarking, int, error) {
 	conditions := []string{"1=1"}
 	args := make([]interface{}, 0, 4)
 	if strings.TrimSpace(containerNo) != "" {
@@ -41,6 +47,12 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 	}
 	if unassignedOnly {
 		conditions = append(conditions, "(b.bl_position_id IS NULL OR b.bl_position_id = 0)")
+	}
+	if strings.EqualFold(unipassStatus, "y") {
+		conditions = append(conditions, "b.frm_unipass IS NOT NULL")
+	}
+	if strings.EqualFold(unipassStatus, "n") {
+		conditions = append(conditions, "b.frm_unipass IS NULL")
 	}
 	whereClause := strings.Join(conditions, " AND ")
 
@@ -119,7 +131,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 	return list, total, nil
 }
 
-func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool) ([]BLMarking, error) {
+func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) ([]BLMarking, error) {
 	conditions := []string{"1=1"}
 	args := make([]interface{}, 0, 3)
 	if strings.TrimSpace(containerNo) != "" {
@@ -132,6 +144,12 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 	}
 	if unassignedOnly {
 		conditions = append(conditions, "(b.bl_position_id IS NULL OR b.bl_position_id = 0)")
+	}
+	if strings.EqualFold(unipassStatus, "y") {
+		conditions = append(conditions, "b.frm_unipass IS NOT NULL")
+	}
+	if strings.EqualFold(unipassStatus, "n") {
+		conditions = append(conditions, "b.frm_unipass IS NULL")
 	}
 	whereClause := strings.Join(conditions, " AND ")
 
@@ -198,7 +216,30 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 	return list, nil
 }
 
-func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool) ([]BLMarking, error) {
+func (r *BLMarking) DeleteByFilters(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool) (int64, error) {
+	conditions := []string{"1=1"}
+	args := make([]interface{}, 0, 3)
+	if strings.TrimSpace(containerNo) != "" {
+		conditions = append(conditions, fmt.Sprintf("b.container_id IN (SELECT id FROM containers WHERE container_no ILIKE $%d)", len(args)+1))
+		args = append(args, "%"+strings.TrimSpace(containerNo)+"%")
+	}
+	if strings.TrimSpace(hblNo) != "" {
+		conditions = append(conditions, fmt.Sprintf("b.hbl_no ILIKE $%d", len(args)+1))
+		args = append(args, "%"+strings.TrimSpace(hblNo)+"%")
+	}
+	if unassignedOnly {
+		conditions = append(conditions, "(b.bl_position_id IS NULL OR b.bl_position_id = 0)")
+	}
+	whereClause := strings.Join(conditions, " AND ")
+
+	result, err := DB.Exec(ctx, "DELETE FROM bl_markings b WHERE "+whereClause, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) ([]BLMarking, error) {
 	conditions := []string{"1=1"}
 	args := make([]interface{}, 0, 3)
 	if strings.TrimSpace(containerNo) != "" {
@@ -212,16 +253,22 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 	if unassignedOnly {
 		conditions = append(conditions, "(b.bl_position_id IS NULL OR b.bl_position_id = 0)")
 	}
+	if strings.EqualFold(unipassStatus, "y") {
+		conditions = append(conditions, "b.frm_unipass IS NOT NULL")
+	}
+	if strings.EqualFold(unipassStatus, "n") {
+		conditions = append(conditions, "b.frm_unipass IS NULL")
+	}
 	whereClause := strings.Join(conditions, " AND ")
 
 	rows, err := DB.Query(ctx,
 		fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at,
-						c.container_no, p.name, u.name, s.name, b.frm_unipass
-					FROM bl_markings b
-					LEFT JOIN containers c ON c.id = b.container_id
-					LEFT JOIN suppliers s ON s.id = c.supplier_id
-					LEFT JOIN bl_positions p ON p.id = b.bl_position_id
-					LEFT JOIN users u ON u.id = b.user_id
+												c.container_no, p.name, u.name, s.name, s.color, b.frm_unipass
+										FROM bl_markings b
+										LEFT JOIN containers c ON c.id = b.container_id
+										LEFT JOIN suppliers s ON s.id = c.supplier_id
+										LEFT JOIN bl_positions p ON p.id = b.bl_position_id
+										LEFT JOIN users u ON u.id = b.user_id   
 					WHERE %s
 					ORDER BY b.id DESC`, whereClause),
 		args...)
@@ -238,6 +285,7 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 		var positionName pgtype.Text
 		var userName pgtype.Text
 		var supplierName pgtype.Text
+		var supplierColor pgtype.Text
 		var frmUnipass pgtype.Text
 		err := rows.Scan(
 			&item.ID,
@@ -252,6 +300,7 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 			&positionName,
 			&userName,
 			&supplierName,
+			&supplierColor,
 			&frmUnipass,
 		)
 		if err != nil {
@@ -273,6 +322,9 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 		if supplierName.Valid {
 			item.SupplierName = supplierName.String
 		}
+		if supplierColor.Valid {
+			item.SupplierColor = supplierColor.String
+		}
 		if frmUnipass.Valid {
 			value := frmUnipass.String
 			item.FrmUnipass = &value
@@ -281,6 +333,65 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 	}
 
 	return list, nil
+}
+
+func (r *BLMarking) ListForUnipassApply(ctx context.Context, containerNo string, hblNo string, unassignedOnly bool, unipassStatus string) ([]BLMarkingUnipassTarget, error) {
+	conditions := []string{"1=1"}
+	args := make([]interface{}, 0, 3)
+	if strings.TrimSpace(containerNo) != "" {
+		conditions = append(conditions, fmt.Sprintf("c.container_no ILIKE $%d", len(args)+1))
+		args = append(args, "%"+strings.TrimSpace(containerNo)+"%")
+	}
+	if strings.TrimSpace(hblNo) != "" {
+		conditions = append(conditions, fmt.Sprintf("b.hbl_no ILIKE $%d", len(args)+1))
+		args = append(args, "%"+strings.TrimSpace(hblNo)+"%")
+	}
+	if unassignedOnly {
+		conditions = append(conditions, "(b.bl_position_id IS NULL OR b.bl_position_id = 0)")
+	}
+	if strings.EqualFold(unipassStatus, "y") {
+		conditions = append(conditions, "b.frm_unipass IS NOT NULL")
+	}
+	if strings.EqualFold(unipassStatus, "n") {
+		conditions = append(conditions, "b.frm_unipass IS NULL")
+	}
+	whereClause := strings.Join(conditions, " AND ")
+
+	rows, err := DB.Query(ctx,
+		fmt.Sprintf(`SELECT b.id, b.hbl_no
+					FROM bl_markings b
+					LEFT JOIN containers c ON c.id = b.container_id
+					WHERE %s
+					ORDER BY b.id DESC`, whereClause),
+		args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []BLMarkingUnipassTarget
+	for rows.Next() {
+		var item BLMarkingUnipassTarget
+		if err := rows.Scan(&item.ID, &item.HBLNo); err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+
+	return list, nil
+}
+
+func (r *BLMarking) UpdateUnipassXML(ctx context.Context, id int64, xmlData *string) error {
+	_, err := DB.Exec(ctx,
+		`UPDATE bl_markings SET
+		 frm_unipass = $1,
+		 updated_at = $2
+		 WHERE id = $3`,
+		xmlData,
+		time.Now(),
+		id,
+	)
+	return err
 }
 
 func (r *BLMarking) GetByID(ctx context.Context, id int64) (*BLMarking, error) {

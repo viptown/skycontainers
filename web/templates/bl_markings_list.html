@@ -46,6 +46,7 @@
 {{end}}
 <div class="table-container" style="padding: 1.5rem; margin-bottom: 1.5rem;">
     <form method="GET" action="/admin/bl_markings">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         {{$containerNo := .Data.ContainerNo}}
         {{$hblNo := .Data.HBLNo}}
         {{$unassignedOnly := .Data.UnassignedOnly}}
@@ -64,6 +65,14 @@
                     $unassignedOnly}}checked{{end}}>
                 <label for="search_unassigned_only" style="margin: 0;">BL 포지션 미지정만</label>
             </div>
+            <div style="min-width: 180px;">
+                <label for="search_unipass_status">유니패스</label>
+                <select id="search_unipass_status" name="unipass_status">
+                    <option value="">전체</option>
+                    <option value="y" {{if eq .Data.UnipassStatus "y"}}selected{{end}}>Y</option>
+                    <option value="n" {{if eq .Data.UnipassStatus "n"}}selected{{end}}>N</option>
+                </select>
+            </div>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <button type="submit" class="btn btn-secondary">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -81,6 +90,35 @@
                     </svg>
                     초기화
                 </a>
+                {{if canAccess .User "update" "bl_markings"}}
+                <button type="submit" class="btn btn-secondary" formmethod="post"
+                    formaction="/admin/bl_markings/apply_unipass" hx-boost="false"
+                    onclick="return confirm('검색된 결과가 총 {{$pager.TotalItems}}개 입니다. 유니패스를 다시 적용하시겠습니까?');">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 6V2m0 0L9 5m3-3 3 3"></path>
+                        <path d="M20 12a8 8 0 1 1-8-8"></path>
+                    </svg>
+                    유니패스적용
+                </button>
+                {{end}}
+                {{if canAccess .User "delete" "bl_markings"}}
+                <input type="hidden" name="container_no" value="{{$containerNo}}">
+                <input type="hidden" name="hbl_no" value="{{$hblNo}}">
+                <input type="hidden" name="unassigned_only" value="{{if $unassignedOnly}}1{{end}}">
+                <input type="hidden" name="unipass_status" value="{{.Data.UnipassStatus}}">
+                <button type="submit" class="btn btn-danger" formmethod="post"
+                    formaction="/admin/bl_markings/delete_filtered" hx-boost="false"
+                    onclick="return confirm('검색된 결과가 총 {{$pager.TotalItems}}개 입니다. 삭제 하시겠습니까?');">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                    전체 삭제
+                </button>
+                {{end}}
                 <a href="{{.Data.ExportURL}}" class="btn btn-secondary" hx-boost="false">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -184,23 +222,24 @@
     {{$containerNo := .Data.ContainerNo}}
     {{$hblNo := .Data.HBLNo}}
     {{$unassignedOnly := .Data.UnassignedOnly}}
+    {{$unipassStatus := .Data.UnipassStatus}}
     {{if gt $pager.TotalPages 1}}
     {{if gt $pager.CurrentPage 1}}
-    <a href="?page=1{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+    <a href="?page=1{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}{{if $unipassStatus}}&unipass_status={{$unipassStatus}}{{end}}"
         class="page-link">&lt;&lt;</a>
-    <a href="?page={{add $pager.CurrentPage -1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+    <a href="?page={{add $pager.CurrentPage -1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}{{if $unipassStatus}}&unipass_status={{$unipassStatus}}{{end}}"
         class="page-link">&lt;</a>
     {{end}}
 
     {{range $p := $pager.Pages}}
-    <a href="?page={{$p}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+    <a href="?page={{$p}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}{{if $unipassStatus}}&unipass_status={{$unipassStatus}}{{end}}"
         class="page-link {{if eq $p $pager.CurrentPage}}active{{end}}">{{$p}}</a>
     {{end}}
 
     {{if lt $pager.CurrentPage $pager.TotalPages}}
-    <a href="?page={{add $pager.CurrentPage 1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+    <a href="?page={{add $pager.CurrentPage 1}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}{{if $unipassStatus}}&unipass_status={{$unipassStatus}}{{end}}"
         class="page-link">&gt;</a>
-    <a href="?page={{$pager.TotalPages}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}"
+    <a href="?page={{$pager.TotalPages}}{{if $containerNo}}&container_no={{urlquery $containerNo}}{{end}}{{if $hblNo}}&hbl_no={{urlquery $hblNo}}{{end}}{{if $unassignedOnly}}&unassigned_only=1{{end}}{{if $unipassStatus}}&unipass_status={{$unipassStatus}}{{end}}"
         class="page-link">&gt;&gt;</a>
     {{end}}
     {{end}}

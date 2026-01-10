@@ -23,6 +23,7 @@ type cargoCardItem struct {
 	Consignee     string
 	Forwarder     string
 	Marks         string
+	MarksColor    string
 	HasUnipass    bool
 	UnipassStatus string
 }
@@ -37,9 +38,10 @@ func ShowBLCargoCards(w http.ResponseWriter, r *http.Request) {
 	unassignedOnly := strings.EqualFold(r.URL.Query().Get("unassigned_only"), "1") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "true") ||
 		strings.EqualFold(r.URL.Query().Get("unassigned_only"), "on")
+	unipassStatus := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("unipass_status")))
 
 	repoItem := repo.BLMarking{}
-	list, err := repoItem.ListForCargoCard(r.Context(), containerNo, hblNo, unassignedOnly)
+	list, err := repoItem.ListForCargoCard(r.Context(), containerNo, hblNo, unassignedOnly, unipassStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -106,6 +108,7 @@ func buildCargoCard(item repo.BLMarking) cargoCardItem {
 		Consignee:     consignee,
 		Forwarder:     forwarder,
 		Marks:         item.Marks,
+		MarksColor:    normalizeColor(item.SupplierColor),
 		HasUnipass:    hasUnipass,
 		UnipassStatus: status,
 	}
@@ -202,4 +205,15 @@ func combineValueUnit(value string, unit string) string {
 		return value
 	}
 	return value + " " + unit
+}
+
+func normalizeColor(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "#") {
+		return value
+	}
+	return "#" + value
 }

@@ -27,6 +27,7 @@
                 <th>업체명</th>
                 <th>전화번호</th>
                 <th>이메일</th>
+                <th>색상</th>
                 <th>상태</th>
                 <th style="text-align: right;">관리</th>
             </tr>
@@ -37,6 +38,16 @@
                 <td style="font-weight: 600; color: var(--text-main);">{{.Name}}</td>
                 <td>{{.Tel}}</td>
                 <td>{{.Email}}</td>
+                <td>
+                    {{if .Color}}
+                    <span style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <span style="width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); background: {{.Color}};"></span>
+                        <span>{{.Color}}</span>
+                    </span>
+                    {{else}}
+                    -
+                    {{end}}
+                </td>
                 <td>
                     {{if .IsActive}}
                     <span class="badge badge-success">활성</span>
@@ -70,7 +81,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="5" style="text-align: center; padding: 5rem 0;">
+                <td colspan="6" style="text-align: center; padding: 5rem 0;">
                     <div class="empty-state">
                         <p style="color: var(--text-muted); font-size: 1rem;">등록된 업체가 없습니다.</p>
                     </div>

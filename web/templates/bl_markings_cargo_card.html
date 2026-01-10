@@ -70,7 +70,7 @@
             </tr>
             <tr>
                 <th>Marks</th>
-                <td colspan="5" class="cargo-card-marks">{{$item.Marks}}</td>
+                <td colspan="5" class="cargo-card-marks" {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"{{end}}>{{$item.Marks}}</td>
             </tr>
         </table>
     </section>

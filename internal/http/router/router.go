@@ -110,6 +110,8 @@ func NewRouter() *chi.Mux {
 				r.Get("/", handlers.ListBLMarkings)
 				r.Get("/export", handlers.ExportBLMarkings)
 				r.Get("/cargo_card", handlers.ShowBLCargoCards)
+				r.Post("/apply_unipass", handlers.PostApplyUnipassFiltered)
+				r.Post("/delete_filtered", handlers.PostDeleteBLMarkingsFiltered)
 				r.Get("/new", handlers.ShowCreateBLMarking)
 				r.Post("/", handlers.PostCreateBLMarking)
 				r.Post("/upload", handlers.PostUploadBLMarkings)

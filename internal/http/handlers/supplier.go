@@ -58,6 +58,7 @@ func PostCreateSupplier(w http.ResponseWriter, r *http.Request) {
 		Name:     r.FormValue("name"),
 		Tel:      r.FormValue("tel"),
 		Email:    r.FormValue("email"),
+		Color:    r.FormValue("color"),
 		IsActive: isActive,
 	}
 
@@ -103,6 +104,7 @@ func PostUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		Name:     r.FormValue("name"),
 		Tel:      r.FormValue("tel"),
 		Email:    r.FormValue("email"),
+		Color:    r.FormValue("color"),
 		IsActive: isActive,
 	}
 

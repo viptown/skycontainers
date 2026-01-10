@@ -11,6 +11,7 @@ type Supplier struct {
 	Name      string
 	Tel       string
 	Email     string
+	Color     string
 	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -24,7 +25,7 @@ func (r *Supplier) List(ctx context.Context, p pagination.Pager) ([]Supplier, in
 	}
 
 	rows, err := DB.Query(ctx,
-		"SELECT id, name, tel, email, is_active, created_at, updated_at FROM suppliers ORDER BY id DESC LIMIT $1 OFFSET $2",
+		"SELECT id, name, tel, email, COALESCE(color, ''), is_active, created_at, updated_at FROM suppliers ORDER BY id DESC LIMIT $1 OFFSET $2",
 		p.PageSize, p.Offset())
 	if err != nil {
 		return nil, 0, err
@@ -34,7 +35,7 @@ func (r *Supplier) List(ctx context.Context, p pagination.Pager) ([]Supplier, in
 	var list []Supplier
 	for rows.Next() {
 		var item Supplier
-		err := rows.Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
+		err := rows.Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.Color, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -46,8 +47,8 @@ func (r *Supplier) List(ctx context.Context, p pagination.Pager) ([]Supplier, in
 
 func (r *Supplier) GetByID(ctx context.Context, id int64) (*Supplier, error) {
 	var item Supplier
-	err := DB.QueryRow(ctx, "SELECT id, name, tel, email, is_active, created_at, updated_at FROM suppliers WHERE id = $1", id).
-		Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
+	err := DB.QueryRow(ctx, "SELECT id, name, tel, email, COALESCE(color, ''), is_active, created_at, updated_at FROM suppliers WHERE id = $1", id).
+		Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.Color, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +59,14 @@ func (r *Supplier) Create(ctx context.Context) error {
 	r.CreatedAt = time.Now()
 	r.UpdatedAt = time.Now()
 	_, err := DB.Exec(ctx,
-		"INSERT INTO suppliers (name, tel, email, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
-		r.Name, r.Tel, r.Email, r.IsActive, r.CreatedAt, r.UpdatedAt)
+		"INSERT INTO suppliers (name, tel, email, color, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		r.Name, r.Tel, r.Email, r.Color, r.IsActive, r.CreatedAt, r.UpdatedAt)
 	return err
 }
 
 func (r *Supplier) ListAll(ctx context.Context) ([]Supplier, error) {
 	rows, err := DB.Query(ctx,
-		"SELECT id, name, tel, email, is_active, created_at, updated_at FROM suppliers WHERE is_active = true ORDER BY name ASC")
+		"SELECT id, name, tel, email, COALESCE(color, ''), is_active, created_at, updated_at FROM suppliers WHERE is_active = true ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (r *Supplier) ListAll(ctx context.Context) ([]Supplier, error) {
 	var list []Supplier
 	for rows.Next() {
 		var item Supplier
-		err := rows.Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
+		err := rows.Scan(&item.ID, &item.Name, &item.Tel, &item.Email, &item.Color, &item.IsActive, &item.CreatedAt, &item.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +88,8 @@ func (r *Supplier) ListAll(ctx context.Context) ([]Supplier, error) {
 func (r *Supplier) Update(ctx context.Context) error {
 	r.UpdatedAt = time.Now()
 	_, err := DB.Exec(ctx,
-		"UPDATE suppliers SET name = $1, tel = $2, email = $3, is_active = $4, updated_at = $5 WHERE id = $6",
-		r.Name, r.Tel, r.Email, r.IsActive, r.UpdatedAt, r.ID)
+		"UPDATE suppliers SET name = $1, tel = $2, email = $3, color = $4, is_active = $5, updated_at = $6 WHERE id = $7",
+		r.Name, r.Tel, r.Email, r.Color, r.IsActive, r.UpdatedAt, r.ID)
 	return err
 }
 
