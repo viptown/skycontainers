@@ -108,6 +108,8 @@ func NewRouter() *chi.Mux {
 
 			r.Route("/bl_markings", func(r chi.Router) {
 				r.Get("/", handlers.ListBLMarkings)
+				r.Get("/export", handlers.ExportBLMarkings)
+				r.Get("/cargo_card", handlers.ShowBLCargoCards)
 				r.Get("/new", handlers.ShowCreateBLMarking)
 				r.Post("/", handlers.PostCreateBLMarking)
 				r.Post("/upload", handlers.PostUploadBLMarkings)

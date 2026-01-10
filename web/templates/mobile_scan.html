@@ -28,18 +28,133 @@
 
         <div class="form-group">
             <label class="form-label">HBL 번호</label>
-            <input type="text" id="hbl_no" name="hbl_no" class="form-input" placeholder="바코드 스캔 또는 입력" required>
+            <input type="text" id="hbl_no" name="hbl_no" class="form-input" placeholder="바코드 스캔 또는 입력" required hx-post="/mobile/check_hbl" hx-trigger="keyup changed delay:400ms, blur" hx-target="#hbl-status" hx-swap="innerHTML">
             <div id="hbl-status" class="input-status"></div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-lg"
-            style="width: 100%; margin-top: 1rem;">저장</button>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem;">
+            <button type="submit" id="save-btn" class="btn btn-primary btn-block btn-lg" disabled
+                style="flex: 1 1 auto;">저장</button>
+            <label style="display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+                <input type="checkbox" id="auto-save-toggle">
+                <span>자동저장</span>
+            </label>
+        </div>
     </form>
 
     <div id="result-area" style="margin-top: 1rem;"></div>
 </div>
 
 <script>
+    window.hblIsValid = false;
+    window.autoSaveEnabled = false;
+    window.autoSaveInFlight = false;
+
+    function setSaveButtonEnabled(enabled) {
+        var btn = document.getElementById("save-btn");
+        if (!btn) { return; }
+        btn.disabled = !enabled;
+    }
+
+    function canAutoSave() {
+        if (!window.hblIsValid) { return false; }
+        var pos = document.querySelector('select[name="position_id"]');
+        var hblInput = document.getElementById("hbl_no");
+        return !!(pos && pos.value) && !!(hblInput && hblInput.value.trim());
+    }
+
+    function triggerAutoSave() {
+        if (!window.autoSaveEnabled || !canAutoSave() || window.autoSaveInFlight || !window.htmx) {
+            return;
+        }
+        window.autoSaveInFlight = true;
+        var form = document.getElementById("scan-form");
+        var pos = document.querySelector('select[name="position_id"]');
+        var hblInput = document.getElementById("hbl_no");
+        var csrfInput = form ? form.querySelector('input[name="csrf_token"]') : null;
+        htmx.ajax("POST", "/mobile/scan", {
+            source: form,
+            target: "#result-area",
+            swap: "innerHTML",
+            values: {
+                position_id: pos ? pos.value : "",
+                hbl_no: hblInput ? hblInput.value : "",
+                csrf_token: csrfInput ? csrfInput.value : ""
+            }
+        });
+    }
+
+    (function () {
+        var hblInput = document.getElementById("hbl_no");
+        if (!hblInput) { return; }
+        hblInput.addEventListener("input", function () {
+            window.hblIsValid = false;
+            setSaveButtonEnabled(false);
+        });
+    })();
+
+    (function () {
+        var autoToggle = document.getElementById("auto-save-toggle");
+        if (!autoToggle) { return; }
+        autoToggle.addEventListener("change", function () {
+            window.autoSaveEnabled = autoToggle.checked;
+            if (window.autoSaveEnabled) {
+                triggerAutoSave();
+            }
+        });
+    })();
+
+    (function () {
+        var pos = document.querySelector('select[name="position_id"]');
+        if (!pos) { return; }
+        pos.addEventListener("change", function () {
+            if (window.autoSaveEnabled) {
+                triggerAutoSave();
+            }
+        });
+    })();
+
+    document.body.addEventListener("hblCheck", function (evt) {
+        window.hblIsValid = !!(evt.detail && evt.detail.valid);
+        setSaveButtonEnabled(window.hblIsValid);
+        if (window.hblIsValid) {
+            triggerAutoSave();
+        }
+    });
+
+    document.body.addEventListener("scanSaved", function () {
+        window.hblIsValid = false;
+        var hblInput = document.getElementById("hbl_no");
+        if (hblInput) {
+            hblInput.value = "";
+            hblInput.focus();
+        }
+        var status = document.getElementById("hbl-status");
+        if (status) { status.innerHTML = ""; }
+        setSaveButtonEnabled(false);
+    });
+
+    (function () {
+        var form = document.getElementById("scan-form");
+        if (!form) { return; }
+        form.addEventListener("submit", function (e) {
+            if (window.hblIsValid) { return; }
+            e.preventDefault();
+            setSaveButtonEnabled(false);
+            var resultArea = document.getElementById("result-area");
+            if (resultArea) {
+                resultArea.innerHTML = '<div class="toast toast-error">존재하지 않는 HBL은 저장할 수 없습니다.</div>';
+            }
+        });
+    })();
+
+    document.body.addEventListener("htmx:afterRequest", function (evt) {
+        var form = document.getElementById("scan-form");
+        if (evt.detail && evt.detail.elt === form) {
+            window.autoSaveInFlight = false;
+        }
+    });
+
     function isLocalhost() {
         return location.hostname === "localhost" || location.hostname === "127.0.0.1";
     }
@@ -83,6 +198,8 @@
 
         function onScanSuccess(decodedText, decodedResult) {
             if (document.getElementById("hbl_no").value !== decodedText) {
+                window.hblIsValid = false;
+                setSaveButtonEnabled(false);
                 document.getElementById("hbl_no").value = decodedText;
                 htmx.ajax("POST", "/mobile/check_hbl", { target: "#hbl-status", values: { hbl_no: decodedText } });
             }

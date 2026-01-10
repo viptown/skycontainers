@@ -22,8 +22,8 @@
                 </small>
             </div>
             <div style="flex: 1.2; min-width: 260px;">
-                <label for="bl_marking_file">xlsx 파일</label>
-                <input type="file" id="bl_marking_file" name="file" accept=".xlsx" required>
+                <label for="bl_marking_file">xlsx/csv 파일</label>
+                <input type="file" id="bl_marking_file" name="file" accept=".xlsx,.csv" required>
                 <div id="bl_marking_file_status" class="input-status" aria-live="polite"></div>
                 <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
                     형식: hblno, marks (첫 행이 헤더면 자동 인식). BL 포지션은 이후에 관리자가 수동 지정합니다.
@@ -46,19 +46,22 @@
 {{end}}
 <div class="table-container" style="padding: 1.5rem; margin-bottom: 1.5rem;">
     <form method="GET" action="/admin/bl_markings">
+        {{$containerNo := .Data.ContainerNo}}
+        {{$hblNo := .Data.HBLNo}}
+        {{$unassignedOnly := .Data.UnassignedOnly}}
         <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-end;">
             <div style="flex: 1; min-width: 220px;">
                 <label for="search_container_no">컨테이너 번호</label>
-                <input type="text" id="search_container_no" name="container_no" value="{{.Data.ContainerNo}}"
+                <input type="text" id="search_container_no" name="container_no" value="{{$containerNo}}"
                     placeholder="컨테이너 번호를 입력하세요">
             </div>
             <div style="flex: 1; min-width: 220px;">
                 <label for="search_hbl_no">HBL 번호</label>
-                <input type="text" id="search_hbl_no" name="hbl_no" value="{{.Data.HBLNo}}" placeholder="HBL 번호를 입력하세요">
+                <input type="text" id="search_hbl_no" name="hbl_no" value="{{$hblNo}}" placeholder="HBL 번호를 입력하세요">
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 200px; padding-bottom: 0.35rem;">
                 <input type="checkbox" id="search_unassigned_only" name="unassigned_only" value="1" {{if
-                    .Data.UnassignedOnly}}checked{{end}}>
+                    $unassignedOnly}}checked{{end}}>
                 <label for="search_unassigned_only" style="margin: 0;">BL 포지션 미지정만</label>
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
@@ -78,6 +81,23 @@
                     </svg>
                     초기화
                 </a>
+                <a href="{{.Data.ExportURL}}" class="btn btn-secondary" hx-boost="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    엑셀 다운로드
+                </a>
+                <a href="{{.Data.CargoCardURL}}" class="btn btn-secondary" hx-boost="false" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="8" y1="13" x2="16" y2="13"></line>
+                        <line x1="8" y1="17" x2="16" y2="17"></line>
+                    </svg>
+                    화물카드
+                </a>
             </div>
         </div>
         <div style="margin-top: 0.75rem; color: var(--text-main); font-weight: 600;">
@@ -90,36 +110,26 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 80px; white-space: nowrap; text-align: center;">순서</th>
                 <th>컨테이너 번호</th>
                 <th>BL 포지션</th>
                 <th>HBL 번호</th>
+                <th>유니패스</th>
                 <th>Marks</th>
                 <th>사용자</th>
                 <th>생성일</th>
-                <th>상태</th>
                 <th>관리</th>
             </tr>
         </thead>
         <tbody>
             {{range $idx, $item := .Data.Items}}
             <tr id="blm-row-{{$item.ID}}">
-                <td style="white-space: nowrap; text-align: center;">{{add (add $pager.Offset $idx) 1}}</td>
                 <td>{{$item.ContainerNo}}</td>
                 <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
+                <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
                 <td>{{$item.Marks}}</td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
                 <td>{{formatDate $item.CreatedAt}}</td>
-                <td>
-                    {{if $item.IsActive}}
-                    <span
-                        style="color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;">활성</span>
-                    {{else}}
-                    <span
-                        style="color: var(--danger); background: rgba(239, 68, 68, 0.1); padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.8rem;">비활성</span>
-                    {{end}}
-                </td>
                 <td>
                     {{if or (canAccess $.User "update" "bl_markings" $item.UserID) (canAccess $.User "delete" "bl_markings" $item.UserID)}}
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -163,7 +173,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="9" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
+                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
             </tr>
             {{end}}
         </tbody>

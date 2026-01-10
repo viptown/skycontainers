@@ -1,0 +1,288 @@
+{{template "layout.html" .}}
+{{define "title"}}{{.Title}}{{end}}
+{{define "content"}}
+<div class="print-actions">
+    <div>
+        <strong>화물카드 출력</strong>
+        <span style="color: var(--text-muted); margin-left: 0.5rem;">{{.Data.PrintedAt}}</span>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="window.print()">프린트</button>
+</div>
+
+{{$items := .Data.Items}}
+{{if $items}}
+<div class="cargo-card-list">
+    {{range $idx, $item := $items}}
+    <section class="cargo-card">
+        <div class="cargo-card-title">수입화물품목카드</div>
+        <table class="cargo-card-table">
+            <colgroup>
+                <col style="width: 20%;">
+                <col style="width: 25%;">
+                <col style="width: 15%;">
+                <col style="width: 13%;">
+                <col style="width: 12%;">
+                <col style="width: 15%;">
+            </colgroup>
+            <tr>
+                <th>입항일</th>
+                <td>{{$item.ArrivalDate}}</td>
+                <th>선(기)명</th>
+                <td colspan="3">{{$item.VesselName}}</td>
+            </tr>
+            <tr>
+                <th>B/L 번호</th>
+                <td colspan="5" class="cargo-card-bl">{{$item.BLNo}}</td>
+            </tr>
+            <tr>
+                <th>바코드</th>
+                <td colspan="5" class="cargo-card-barcode-container">
+                    <svg class="cargo-card-barcode" data-barcode="{{$item.BLNo}}"></svg>
+                </td>
+            </tr>
+            <tr>
+                <th>수량</th>
+                <td>{{$item.Quantity}}</td>
+                <th>용적</th>
+                <td>{{$item.Volume}}</td>
+                <th>중량</th>
+                <td>{{$item.Weight}}</td>
+            </tr>
+            <tr>
+                <th>화물관리</th>
+                <td colspan="5" class="cargo-card-long">{{$item.CargoNo}}</td>
+            </tr>
+            <tr>
+                <th>품명</th>
+                <td colspan="5" class="cargo-card-long">{{$item.ProductName}}</td>
+            </tr>
+            <tr>
+                <th>컨테이너</th>
+                <td colspan="5" class="cargo-card-long">{{$item.ContainerNo}}</td>
+            </tr>
+            <tr>
+                <th>수화인</th>
+                <td colspan="5" class="cargo-card-long">{{$item.Consignee}}</td>
+            </tr>
+            <tr>
+                <th>포워더</th>
+                <td colspan="5" class="cargo-card-long">{{$item.Forwarder}}</td>
+            </tr>
+            <tr>
+                <th>Marks</th>
+                <td colspan="5" class="cargo-card-marks">{{$item.Marks}}</td>
+            </tr>
+        </table>
+    </section>
+    {{if ne $idx (add (len $items) -1)}}
+    <div class="page-break"></div>
+    {{end}}
+    {{end}}
+</div>
+{{else}}
+<div style="padding: 2rem 0; color: var(--text-muted);">출력할 데이터가 없습니다.</div>
+{{end}}
+
+<style>
+    .print-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        background: var(--surface);
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+    }
+
+    .cargo-card-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+        padding-bottom: 4rem;
+    }
+
+    .cargo-card {
+        border: 1px solid #000;
+        padding: 10mm;
+        background: #fff;
+        width: 210mm;
+        height: 297mm;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        color: #000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .cargo-card-title {
+        font-size: 2.4rem;
+        font-weight: 900;
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.1em;
+        text-align: center;
+        text-decoration: underline;
+        text-underline-offset: 8px;
+    }
+
+    .cargo-card-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        border: 2px solid #000;
+        background: #fff;
+        flex: 1;
+        /* Naturally fill remaining space without forced overflow */
+    }
+
+    .cargo-card-table th,
+    .cargo-card-table td {
+        border: 1px solid #000;
+        padding: 0.8rem 0.5rem;
+        vertical-align: middle;
+        font-size: 1.45rem;
+        word-break: break-all;
+    }
+
+    /* Fixed alignment for specific data */
+    tr:first-child td {
+        text-align: center;
+        font-weight: 800;
+        white-space: nowrap;
+        font-size: 1.55rem;
+    }
+
+    .cargo-card-table th {
+        background: #f2f2f2;
+        font-weight: 700;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .cargo-card-bl {
+        font-size: 2.5rem !important;
+        font-weight: 1000;
+        text-align: center;
+        padding: 0.8rem !important;
+        letter-spacing: -0.01em;
+        line-height: 1;
+    }
+
+    .cargo-card-barcode-container {
+        padding: 0.5rem !important;
+        text-align: center;
+        height: 110px;
+        /* reduced from 140px */
+    }
+
+    .cargo-card-barcode {
+        max-width: 100%;
+        height: 100px;
+        /* reduced from 120px */
+    }
+
+    .cargo-card-marks {
+        font-size: 3.8rem !important;
+        font-weight: 950;
+        line-height: 1.1;
+        padding: 1rem !important;
+        vertical-align: top !important;
+        word-break: break-all;
+        white-space: normal !important;
+    }
+
+    .cargo-card-long {
+        font-size: 1.7rem;
+        font-weight: 800;
+        padding-left: 0.8rem !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+
+    .page-break {
+        page-break-after: always;
+    }
+
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    @media screen and (max-width: 215mm) {
+        .cargo-card {
+            width: 95vw;
+            height: auto;
+            min-height: auto;
+            padding: 5mm;
+        }
+
+        .cargo-card-bl {
+            font-size: 10rem !important;
+        }
+
+        .cargo-card-marks {
+            font-size: 6vw;
+        }
+    }
+
+    @media print {
+
+        .main-nav,
+        footer,
+        .print-actions {
+            display: none !important;
+        }
+
+        body {
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .container,
+        .main-content {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+        }
+
+        .cargo-card {
+            box-shadow: none;
+            border: 1px solid #000;
+            margin: 0;
+            width: 210mm;
+            height: 297mm;
+            page-break-after: always;
+        }
+
+        .cargo-card:last-child {
+            page-break-after: auto;
+        }
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script>
+    (function () {
+        if (!window.JsBarcode) { return; }
+        var barcodes = document.querySelectorAll(".cargo-card-barcode");
+        barcodes.forEach(function (el) {
+            var value = (el.getAttribute("data-barcode") || "").trim();
+            if (!value) { return; }
+            JsBarcode(el, value, {
+                format: "CODE128",
+                displayValue: true,
+                height: 80,
+                width: 2.5,
+                margin: 2,
+                fontSize: 20,
+                textMargin: 2
+            });
+        });
+    })();
+</script>
+{{end}}
+.cargo-card-bl {
+font-size: 10rem !important;
+}

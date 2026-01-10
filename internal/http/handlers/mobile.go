@@ -11,6 +11,7 @@ import (
 	"skycontainers/internal/repo"
 	"skycontainers/internal/view"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -54,8 +55,11 @@ func ShowMobileScan(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostMobileCheckHBL(w http.ResponseWriter, r *http.Request) {
-	hblNo := r.FormValue("hbl_no")
+	hblNo := strings.TrimSpace(r.FormValue("hbl_no"))
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if hblNo == "" {
+		w.Header().Set("HX-Trigger", `{"hblCheck":{"valid":false}}`)
 		return
 	}
 
@@ -64,33 +68,34 @@ func PostMobileCheckHBL(w http.ResponseWriter, r *http.Request) {
 	// We can use GetByHBLNo
 	item, err := markingRepo.GetByHBLNo(r.Context(), hblNo)
 
-	w.Header().Set("Content-Type", "text/html")
 	if err != nil || item == nil {
+		w.Header().Set("HX-Trigger", `{"hblCheck":{"valid":false}}`)
 		fmt.Fprint(w, `<span class="input-status error">⚠️ 존재하지 않는 HBL입니다.</span>`)
 	} else {
+		w.Header().Set("HX-Trigger", `{"hblCheck":{"valid":true}}`)
 		fmt.Fprint(w, `<span class="input-status ok">✅ 확인되었습니다.</span>`)
 	}
 }
 
 func PostMobileScanSave(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
 	positionID, _ := strconv.ParseInt(r.FormValue("position_id"), 10, 64)
-	hblNo := r.FormValue("hbl_no")
+	hblNo := strings.TrimSpace(r.FormValue("hbl_no"))
 
 	if positionID <= 0 || hblNo == "" {
-		http.Error(w, "필수 정보가 누락되었습니다.", http.StatusBadRequest)
+		w.Header().Set("HX-Reswap", "innerHTML")
+		fmt.Fprint(w, `<div class="toast toast-error">필수 정보가 누락되었습니다.</div>`)
 		return
 	}
 
 	markingRepo := repo.BLMarking{}
 	// First find the marking
 	item, err := markingRepo.GetByHBLNo(r.Context(), hblNo)
-	if err != nil {
-		view.Render(w, r, "mobile_scan.html", view.PageData{
-			Error: "존재하지 않는 HBL입니다.",
-		})
-		// Or better, return an error snippet
-		w.Header().Set("HX-Retarget", "#result-area")
-		fmt.Fprint(w, `<div class="toast toast-error">존재하지 않는 HBL입니다.</div>`)
+	if err != nil || item == nil {
+		w.Header().Set("HX-Reswap", "innerHTML")
+		w.Header().Set("HX-Trigger", `{"hblCheck":{"valid":false}}`)
+		fmt.Fprint(w, `<div class="toast toast-error">존재하지 않는 HBL 입니다.</div>`)
 		return
 	}
 
@@ -102,7 +107,8 @@ func PostMobileScanSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("HX-Reswap", "innerHTML")
-	fmt.Fprint(w, `<div class="toast toast-success">저장되었습니다.</div><script>document.getElementById('hbl_no').value = ''; document.getElementById('hbl-status').innerHTML = '';</script>`)
+	w.Header().Set("HX-Trigger", `{"hblCheck":{"valid":false},"scanSaved":{}}`)
+	fmt.Fprint(w, `<div class="toast toast-success">저장되었습니다.</div>`)
 }
 
 // 2. Search Routes

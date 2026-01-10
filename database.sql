@@ -125,7 +125,8 @@ CREATE TABLE "bl_markings"(
         "updated_at" TIMESTAMP(0)
     WITH
         TIME zone NOT NULL,
-        "bl_position_id" BIGINT
+        "bl_position_id" BIGINT,
+        "frm_unipass" XML
 );
 ALTER TABLE
     "bl_markings" ADD PRIMARY KEY("id");
