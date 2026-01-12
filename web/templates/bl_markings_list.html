@@ -154,6 +154,7 @@
     <table>
         <thead>
             <tr>
+                <th>업체명</th>
                 <th>컨테이너 번호</th>
                 <th>BL 포지션</th>
                 <th>HBL 번호</th>
@@ -168,6 +169,7 @@
         <tbody>
             {{range $idx, $item := .Data.Items}}
             <tr id="blm-row-{{$item.ID}}">
+                <td>{{if $item.SupplierName}}{{$item.SupplierName}}{{else}}-{{end}}</td>
                 <td>{{$item.ContainerNo}}</td>
                 <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
@@ -223,7 +225,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="9" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
+                <td colspan="10" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
             </tr>
             {{end}}
         </tbody>
