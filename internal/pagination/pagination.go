@@ -18,7 +18,8 @@ func NewPager(totalItems, currentPage, pageSize int) Pager {
 	totalPages := int(math.Ceil(float64(totalItems) / float64(pageSize)))
 	if currentPage < 1 {
 		currentPage = 1
-	} else if currentPage > totalPages {
+	}
+	if totalPages > 0 && currentPage > totalPages {
 		currentPage = totalPages
 	}
 
