@@ -272,12 +272,12 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 	}
 	whereClause := strings.Join(conditions, " AND ")
 
-	rows, err := DB.Query(ctx,
-		fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at,
-												c.container_no, p.name, u.name, s.name, s.color, b.frm_unipass
-										FROM bl_markings b
-										LEFT JOIN containers c ON c.id = b.container_id
-										LEFT JOIN suppliers s ON s.id = c.supplier_id
+		rows, err := DB.Query(ctx,
+			fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at,
+																			 c.container_no, p.name, u.name, s.name, s.color, b.frm_unipass
+																			 FROM bl_markings b
+																			 LEFT JOIN containers c ON c.id = b.container_id
+																			 LEFT JOIN suppliers s ON s.id = c.supplier_id
 										LEFT JOIN bl_positions p ON p.id = b.bl_position_id
 										LEFT JOIN users u ON u.id = b.user_id   
 					WHERE %s
@@ -293,6 +293,7 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 		var item BLMarking
 		var blPositionID pgtype.Int8
 		var containerNo pgtype.Text
+		var cnee pgtype.Text
 		var positionName pgtype.Text
 		var userName pgtype.Text
 		var supplierName pgtype.Text
@@ -305,6 +306,7 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 			&blPositionID,
 			&item.HBLNo,
 			&item.Marks,
+			&cnee,
 			&item.IsActive,
 			&item.CreatedAt,
 			&containerNo,
@@ -323,6 +325,9 @@ func (r *BLMarking) ListForCargoCard(ctx context.Context, containerNo string, hb
 		}
 		if containerNo.Valid {
 			item.ContainerNo = containerNo.String
+		}
+		if cnee.Valid {
+			item.Cnee = cnee.String
 		}
 		if positionName.Valid {
 			item.BLPositionName = positionName.String
