@@ -173,7 +173,11 @@
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
                 <td>{{if $item.Cnee}}{{truncateText $item.Cnee 12}}{{else}}-{{end}}</td>
                 <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
-                <td>{{truncateText $item.Marks 15}}</td>
+                <td class="js-copy-marks" data-marks="{{if $item.Marks}}{{$item.Marks}}{{end}}"
+                    data-position="{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}"
+                    style="cursor: pointer;" title="클릭하여 복사">
+                    {{truncateText $item.Marks 15}}
+                </td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
                 <td>{{formatDate $item.CreatedAt}}</td>
                 <td>
@@ -399,6 +403,93 @@
             setFileStatus("", "파일을 선택해 주세요.");
         }
         updateButton();
+    })();
+</script>
+<script>
+    (function () {
+        var cells = document.querySelectorAll(".js-copy-marks");
+        if (!cells.length) {
+            return;
+        }
+
+        var fallbackCopy = function (text) {
+            var textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "absolute";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand("copy");
+            } catch (err) {
+                console.warn("copy failed", err);
+            }
+            document.body.removeChild(textarea);
+        };
+
+        var showToast = function (message) {
+            var stack = document.querySelector(".toast-stack");
+            if (!stack) {
+                stack = document.createElement("div");
+                stack.className = "toast-stack";
+                stack.setAttribute("aria-live", "polite");
+                document.body.appendChild(stack);
+            }
+
+            var toast = document.createElement("div");
+            toast.className = "toast toast-success";
+            toast.setAttribute("role", "status");
+            toast.innerHTML = '' +
+                '<div class="toast-icon" aria-hidden="true">OK</div>' +
+                '<div class="toast-body">' +
+                '<div class="toast-title">완료</div>' +
+                '<div class="toast-message">' + message + '</div>' +
+                '</div>' +
+                '<button class="toast-close" type="button" aria-label="닫기">&times;</button>';
+            stack.appendChild(toast);
+
+            var dismiss = function () {
+                if (toast.classList.contains("toast-hide")) {
+                    return;
+                }
+                toast.classList.add("toast-hide");
+                setTimeout(function () {
+                    if (toast && toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 280);
+            };
+            var close = toast.querySelector(".toast-close");
+            if (close) {
+                close.addEventListener("click", dismiss);
+            }
+            setTimeout(dismiss, 1800);
+        };
+
+        var copyText = function (text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).catch(function (err) {
+                    console.warn("clipboard error", err);
+                    fallbackCopy(text);
+                });
+                showToast("클립보드에 복사되었습니다.");
+                return;
+            }
+            fallbackCopy(text);
+            showToast("클립보드에 복사되었습니다.");
+        };
+
+        cells.forEach(function (cell) {
+            cell.addEventListener("click", function () {
+                var marks = (cell.dataset.marks || "").trim();
+                var position = (cell.dataset.position || "미지정").trim();
+                if (!marks) {
+                    return;
+                }
+                copyText(position + " / " + marks);
+            });
+        });
     })();
 </script>
 {{end}}
