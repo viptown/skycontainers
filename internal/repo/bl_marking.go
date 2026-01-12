@@ -20,6 +20,7 @@ type BLMarking struct {
 	BLPositionName string
 	HBLNo          string
 	Marks          string
+	Cnee           string
 	IsActive       bool
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -65,13 +66,13 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 
 	limitIndex := len(args) + 1
 	offsetIndex := len(args) + 2
-	rows, err := DB.Query(ctx,
-		fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at,
-							c.container_no, p.name, u.name, s.name,
-							CASE WHEN b.frm_unipass IS NULL THEN false ELSE true END
-						FROM bl_markings b
-						LEFT JOIN containers c ON c.id = b.container_id
-						LEFT JOIN suppliers s ON s.id = c.supplier_id
+		rows, err := DB.Query(ctx,
+			fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at,
+													 c.container_no, p.name, u.name, s.name,
+													 CASE WHEN b.frm_unipass IS NULL THEN false ELSE true END
+											 FROM bl_markings b
+											 LEFT JOIN containers c ON c.id = b.container_id
+											 LEFT JOIN suppliers s ON s.id = c.supplier_id
 						LEFT JOIN bl_positions p ON p.id = b.bl_position_id
 						LEFT JOIN users u ON u.id = b.user_id
 			WHERE %s
@@ -88,6 +89,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 		var item BLMarking
 		var blPositionID pgtype.Int8
 		var containerNo pgtype.Text
+		var cnee pgtype.Text
 		var positionName pgtype.Text
 		var userName pgtype.Text
 		var supplierName pgtype.Text
@@ -98,6 +100,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 			&blPositionID,
 			&item.HBLNo,
 			&item.Marks,
+			&cnee,
 			&item.IsActive,
 			&item.CreatedAt,
 			&containerNo,
@@ -115,6 +118,9 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 		}
 		if containerNo.Valid {
 			item.ContainerNo = containerNo.String
+		}
+		if cnee.Valid {
+			item.Cnee = cnee.String
 		}
 		if positionName.Valid {
 			item.BLPositionName = positionName.String
@@ -154,11 +160,11 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 	whereClause := strings.Join(conditions, " AND ")
 
 	rows, err := DB.Query(ctx,
-		fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at,
-						c.container_no, p.name, u.name, s.name
-					FROM bl_markings b
-					LEFT JOIN containers c ON c.id = b.container_id
-					LEFT JOIN suppliers s ON s.id = c.supplier_id
+		fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at,
+											c.container_no, p.name, u.name, s.name
+									FROM bl_markings b
+									LEFT JOIN containers c ON c.id = b.container_id
+									LEFT JOIN suppliers s ON s.id = c.supplier_id
 					LEFT JOIN bl_positions p ON p.id = b.bl_position_id
 					LEFT JOIN users u ON u.id = b.user_id
 					WHERE %s
@@ -174,6 +180,7 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 		var item BLMarking
 		var blPositionID pgtype.Int8
 		var containerNo pgtype.Text
+		var cnee pgtype.Text
 		var positionName pgtype.Text
 		var userName pgtype.Text
 		var supplierName pgtype.Text
@@ -184,6 +191,7 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 			&blPositionID,
 			&item.HBLNo,
 			&item.Marks,
+			&cnee,
 			&item.IsActive,
 			&item.CreatedAt,
 			&containerNo,
@@ -200,6 +208,9 @@ func (r *BLMarking) ListForExport(ctx context.Context, containerNo string, hblNo
 		}
 		if containerNo.Valid {
 			item.ContainerNo = containerNo.String
+		}
+		if cnee.Valid {
+			item.Cnee = cnee.String
 		}
 		if positionName.Valid {
 			item.BLPositionName = positionName.String
@@ -400,22 +411,23 @@ func (r *BLMarking) GetByID(ctx context.Context, id int64) (*BLMarking, error) {
 	var containerNo pgtype.Text
 	var supplierName pgtype.Text
 	err := DB.QueryRow(ctx,
-		`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at, b.updated_at,
-		        c.container_no, s.name
-		FROM bl_markings b
-		LEFT JOIN containers c ON c.id = b.container_id
+	`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at, b.updated_at,
+						c.container_no, s.name
+				FROM bl_markings b
+				LEFT JOIN containers c ON c.id = b.container_id
 		LEFT JOIN suppliers s ON s.id = c.supplier_id
 		WHERE b.id = $1`, id).
 		Scan(
 			&item.ID,
-			&item.ContainerID,
-			&item.UserID,
-			&blPositionID,
-			&item.HBLNo,
-			&item.Marks,
-			&item.IsActive,
-			&item.CreatedAt,
-			&item.UpdatedAt,
+		&item.ContainerID,
+		&item.UserID,
+		&blPositionID,
+		&item.HBLNo,
+		&item.Marks,
+		&item.Cnee,
+		&item.IsActive,
+		&item.CreatedAt,
+		&item.UpdatedAt,
 			&containerNo,
 			&supplierName,
 		)
@@ -442,23 +454,24 @@ func (r *BLMarking) GetByHBLNo(ctx context.Context, hblNo string) (*BLMarking, e
 	var supplierName pgtype.Text
 	var positionName pgtype.Text
 	err := DB.QueryRow(ctx,
-		`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.is_active, b.created_at, b.updated_at,
-		        c.container_no, s.name, p.name
-		FROM bl_markings b
-		LEFT JOIN containers c ON c.id = b.container_id
+	`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at, b.updated_at,
+						c.container_no, s.name, p.name
+				FROM bl_markings b
+				LEFT JOIN containers c ON c.id = b.container_id
 		LEFT JOIN suppliers s ON s.id = c.supplier_id
 		LEFT JOIN bl_positions p ON p.id = b.bl_position_id
 		WHERE b.hbl_no = $1 AND b.is_active = true`, hblNo).
 		Scan(
 			&item.ID,
-			&item.ContainerID,
-			&item.UserID,
-			&blPositionID,
-			&item.HBLNo,
-			&item.Marks,
-			&item.IsActive,
-			&item.CreatedAt,
-			&item.UpdatedAt,
+		&item.ContainerID,
+		&item.UserID,
+		&blPositionID,
+		&item.HBLNo,
+		&item.Marks,
+		&item.Cnee,
+		&item.IsActive,
+		&item.CreatedAt,
+		&item.UpdatedAt,
 			&containerNo,
 			&supplierName,
 			&positionName,
@@ -487,13 +500,14 @@ func (r *BLMarking) Create(ctx context.Context) error {
 	r.UpdatedAt = time.Now()
 	_, err := DB.Exec(ctx,
 		`INSERT INTO bl_markings
-		 (container_id, user_id, bl_position_id, hbl_no, marks, is_active, frm_unipass, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		 (container_id, user_id, bl_position_id, hbl_no, marks, cnee, is_active, frm_unipass, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		r.ContainerID,
 		r.UserID,
 		r.BLPositionID,
 		r.HBLNo,
 		r.Marks,
+		r.Cnee,
 		r.IsActive,
 		r.FrmUnipass,
 		r.CreatedAt,
@@ -511,14 +525,16 @@ func (r *BLMarking) Update(ctx context.Context) error {
 		 bl_position_id = $3,
 		 hbl_no = $4,
 		 marks = $5,
-		 is_active = $6,
-		 updated_at = $7
-		 WHERE id = $8`,
+		 cnee = $6,
+		 is_active = $7,
+		 updated_at = $8
+		 WHERE id = $9`,
 		r.ContainerID,
 		r.UserID,
 		r.BLPositionID,
 		r.HBLNo,
 		r.Marks,
+		r.Cnee,
 		r.IsActive,
 		r.UpdatedAt,
 		r.ID,

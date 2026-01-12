@@ -1,6 +1,12 @@
 {{template "layout.html" .}}
 {{define "title"}}{{.Title}}{{end}}
 {{define "content"}}
+<style>
+    .main-content {
+        max-width: 1800px;
+        width: 100%;
+    }
+</style>
 {{$pager := .Data.Pager}}
 <div
     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 0.75rem;">
@@ -26,7 +32,7 @@
                 <input type="file" id="bl_marking_file" name="file" accept=".xlsx,.csv" required>
                 <div id="bl_marking_file_status" class="input-status" aria-live="polite"></div>
                 <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
-                    형식: hblno, marks (첫 행이 헤더면 자동 인식). BL 포지션은 이후에 관리자가 수동 지정합니다.
+                    형식: hblno, cnee, marks (첫 행은 설명으로 자동 제외). BL 포지션은 이후에 관리자가 수동 지정합니다.
                 </small>
             </div>
         </div>
@@ -151,6 +157,7 @@
                 <th>컨테이너 번호</th>
                 <th>BL 포지션</th>
                 <th>HBL 번호</th>
+                <th>수하인</th>
                 <th>유니패스</th>
                 <th>Marks</th>
                 <th>사용자</th>
@@ -164,6 +171,7 @@
                 <td>{{$item.ContainerNo}}</td>
                 <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
+                <td>{{if $item.Cnee}}{{truncateText $item.Cnee 12}}{{else}}-{{end}}</td>
                 <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
                 <td>{{truncateText $item.Marks 15}}</td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
@@ -211,7 +219,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
+                <td colspan="9" style="text-align: center; padding: 3rem; color: var(--text-muted);">데이터가 없습니다.</td>
             </tr>
             {{end}}
         </tbody>

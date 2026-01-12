@@ -38,6 +38,12 @@
     </div>
 
     <div class="form-group">
+        <label for="cnee">수하인</label>
+        <input type="text" id="cnee" name="cnee" value="{{if .Data}}{{.Data.Cnee}}{{end}}"
+            placeholder="수하인 정보를 입력하세요">
+    </div>
+
+    <div class="form-group">
         <label for="marks">마킹 정보</label>
         <textarea id="marks" name="marks" rows="3" required
             placeholder="마킹 정보를 입력하세요">{{if .Data}}{{.Data.Marks}}{{end}}</textarea>

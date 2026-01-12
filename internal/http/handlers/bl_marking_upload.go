@@ -3,8 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -87,14 +90,16 @@ func PostUploadBLMarkings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	startIdx := 0
-	if looksLikeBLMarkingHeader(rows[0]) {
+	if len(rows) > 0 {
 		startIdx = 1
 	}
 
 	inserted := 0
+	updated := 0
 	skipped := 0
+	repoItem := repo.BLMarking{}
 	for rowIdx := startIdx; rowIdx < len(rows); rowIdx++ {
-		if inserted >= maxUploadRows {
+		if inserted+updated >= maxUploadRows {
 			break
 		}
 		row := rows[rowIdx]
@@ -102,11 +107,12 @@ func PostUploadBLMarkings(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		hblNo := strings.TrimSpace(cleanCell(rowValue(row, 0)))
-		marks := strings.TrimSpace(cleanCell(rowValue(row, 1)))
-		if isBLMarkingHeaderRow(hblNo, marks) {
+		cnee := strings.TrimSpace(cleanCell(rowValue(row, 1)))
+		marks := strings.TrimSpace(cleanCell(rowValue(row, 2)))
+		if isBLMarkingHeaderRow(hblNo, cnee, marks) {
 			continue
 		}
-		if hblNo == "" && marks == "" {
+		if hblNo == "" && cnee == "" && marks == "" {
 			continue
 		}
 		if hblNo == "" || marks == "" {
@@ -120,10 +126,42 @@ func PostUploadBLMarkings(w http.ResponseWriter, r *http.Request) {
 			BLPositionID: blPositionID,
 			HBLNo:        hblNo,
 			Marks:        marks,
+			Cnee:         cnee,
 			IsActive:     true,
 		}
-		if unipassXML, ok := fetchUnipassXML(r.Context(), hblNo); ok {
-			item.FrmUnipass = &unipassXML
+		var unipassXML *string
+		if xmlBody, ok := fetchUnipassXML(r.Context(), hblNo); ok {
+			unipassXML = &xmlBody
+			item.FrmUnipass = unipassXML
+		}
+
+		existing, err := repoItem.GetByHBLNo(r.Context(), hblNo)
+		if err == nil {
+			existing.ContainerID = containerID
+			existing.UserID = userID
+			if blPositionID != nil {
+				existing.BLPositionID = blPositionID
+			}
+			existing.HBLNo = hblNo
+			existing.Marks = marks
+			existing.Cnee = cnee
+			existing.IsActive = true
+			if err := existing.Update(r.Context()); err != nil {
+				renderBLMarkingsListError(w, r, "엑셀 업로드 중 오류가 발생했습니다: "+err.Error())
+				return
+			}
+			if unipassXML != nil {
+				if err := repoItem.UpdateUnipassXML(r.Context(), existing.ID, unipassXML); err != nil {
+					renderBLMarkingsListError(w, r, "엑셀 업로드 중 오류가 발생했습니다: "+err.Error())
+					return
+				}
+			}
+			updated++
+			continue
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			renderBLMarkingsListError(w, r, "엑셀 업로드 중 오류가 발생했습니다: "+err.Error())
+			return
 		}
 		if err := item.Create(r.Context()); err != nil {
 			renderBLMarkingsListError(w, r, "엑셀 업로드 중 오류가 발생했습니다: "+err.Error())
@@ -132,26 +170,29 @@ func PostUploadBLMarkings(w http.ResponseWriter, r *http.Request) {
 		inserted++
 	}
 
-	if inserted == 0 {
+	if inserted == 0 && updated == 0 {
 		renderBLMarkingsListError(w, r, "등록할 데이터가 없습니다.")
 		return
 	}
 
 	message := "업로드 완료: " + strconv.Itoa(inserted) + "건 등록"
+	if updated > 0 {
+		message += ", " + strconv.Itoa(updated) + "건 갱신"
+	}
 	if skipped > 0 {
 		message += ", " + strconv.Itoa(skipped) + "건 제외"
 	}
-	if inserted >= maxUploadRows {
+	if inserted+updated >= maxUploadRows {
 		message += " (최대 " + strconv.Itoa(maxUploadRows) + "건까지 처리)"
 	}
 	redirectWithSuccess(w, r, "/admin/bl_markings", message)
 }
 
 func looksLikeBLMarkingHeader(row []string) bool {
-	if len(row) < 2 {
+	if len(row) < 3 {
 		return false
 	}
-	return isBLMarkingHeaderRow(row[0], row[1])
+	return isBLMarkingHeaderRow(row[0], row[1], row[2])
 }
 
 func rowValue(row []string, idx int) string {
@@ -165,19 +206,19 @@ func cleanCell(value string) string {
 	return strings.TrimPrefix(value, "\ufeff")
 }
 
-func isBLMarkingHeaderRow(hblNo string, marks string) bool {
+func isBLMarkingHeaderRow(hblNo string, cnee string, marks string) bool {
 	first := normalizeHeaderToken(hblNo)
-	second := normalizeHeaderToken(marks)
-	if first == "" || second == "" {
+	third := normalizeHeaderToken(marks)
+	if first == "" || third == "" {
 		return false
 	}
-	if strings.IndexFunc(first, isDigit) >= 0 || strings.IndexFunc(second, isDigit) >= 0 {
+	if strings.IndexFunc(first, isDigit) >= 0 || strings.IndexFunc(third, isDigit) >= 0 {
 		return false
 	}
 	if !containsAny(first, "hbl", "housebl", "houseblno", "blno") {
 		return false
 	}
-	if !containsAny(second, "mark", "marks") {
+	if !containsAny(third, "mark", "marks") {
 		return false
 	}
 	return true
@@ -257,25 +298,35 @@ func fetchUnipassXML(ctx context.Context, hblNo string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	client := &http.Client{Timeout: 12 * time.Second}
+	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("unipass request failed hbl=%s err=%v", hblNo, err)
 		return "", false
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("unipass non-200 hbl=%s status=%d", hblNo, resp.StatusCode)
 		return "", false
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("unipass read failed hbl=%s err=%v", hblNo, err)
 		return "", false
 	}
 	xmlBody := strings.TrimSpace(string(body))
 	if xmlBody == "" {
+		log.Printf("unipass empty body hbl=%s", hblNo)
 		return "", false
 	}
 	if !unipassResultOK(xmlBody) {
+		log.Printf("unipass error body hbl=%s resultCode=%s tCnt=%s ntceInfo=%s",
+			hblNo,
+			strings.TrimSpace(extractXMLTagValue(xmlBody, "resultCode")),
+			strings.TrimSpace(extractXMLTagValue(xmlBody, "tCnt")),
+			strings.TrimSpace(extractXMLTagValue(xmlBody, "ntceInfo")),
+		)
 		return "", false
 	}
 	return xmlBody, true

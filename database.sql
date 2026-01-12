@@ -120,6 +120,7 @@ CREATE TABLE "bl_markings"(
     "user_id" BIGINT NOT NULL,
     "hbl_no" VARCHAR(255) NOT NULL,
     "marks" VARCHAR(255) NOT NULL,
+    "cnee" VARCHAR(255),
     "is_active" BOOLEAN NOT NULL,
     "created_at" TIMESTAMP(0) WITH
         TIME zone NOT NULL,
