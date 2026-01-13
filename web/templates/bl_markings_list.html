@@ -72,11 +72,11 @@
                 <label for="search_unassigned_only" style="margin: 0;">BL 포지션 미지정만</label>
             </div>
             <div style="min-width: 180px;">
-                <label for="search_unipass_status">유니패스</label>
+                <label for="search_unipass_status">화물카드프린트</label>
                 <select id="search_unipass_status" name="unipass_status">
                     <option value="">전체</option>
-                    <option value="y" {{if eq .Data.UnipassStatus "y"}}selected{{end}}>Y</option>
-                    <option value="n" {{if eq .Data.UnipassStatus "n"}}selected{{end}}>N</option>
+                    <option value="y" {{if eq .Data.UnipassStatus "y" }}selected{{end}}>Y</option>
+                    <option value="n" {{if eq .Data.UnipassStatus "n" }}selected{{end}}>N</option>
                 </select>
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
@@ -133,7 +133,8 @@
                     </svg>
                     엑셀 다운로드
                 </a>
-                <a href="{{.Data.CargoCardURL}}" class="btn btn-secondary" hx-boost="false" target="_blank" rel="noopener">
+                <a href="{{.Data.CargoCardURL}}" class="btn btn-secondary" hx-boost="false" target="_blank"
+                    rel="noopener">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -159,7 +160,7 @@
                 <th>BL 포지션</th>
                 <th>HBL 번호</th>
                 <th>수하인</th>
-                <th>유니패스</th>
+                <th>화물카드프린트</th>
                 <th>Marks</th>
                 <th>사용자</th>
                 <th>생성일</th>
@@ -177,13 +178,15 @@
                 <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
                 <td class="js-copy-marks" data-marks="{{if $item.Marks}}{{$item.Marks}}{{end}}"
                     data-position="{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}"
+                    data-supplier="{{if $item.SupplierShort}}{{$item.SupplierShort}}{{else if $item.SupplierName}}{{$item.SupplierName}}{{end}}"
                     style="cursor: pointer;" title="클릭하여 복사">
                     {{truncateText $item.Marks 15}}
                 </td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
                 <td>{{formatDate $item.CreatedAt}}</td>
                 <td>
-                    {{if or (canAccess $.User "update" "bl_markings" $item.UserID) (canAccess $.User "delete" "bl_markings" $item.UserID)}}
+                    {{if or (canAccess $.User "update" "bl_markings" $item.UserID) (canAccess $.User "delete"
+                    "bl_markings" $item.UserID)}}
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         {{if canAccess $.User "update" "bl_markings" $item.UserID}}
                         <form method="POST" action="/admin/bl_markings/{{$item.ID}}/status" style="margin: 0;">
@@ -486,10 +489,12 @@
             cell.addEventListener("click", function () {
                 var marks = (cell.dataset.marks || "").trim();
                 var position = (cell.dataset.position || "미지정").trim();
+                var supplier = (cell.dataset.supplier || "").trim();
                 if (!marks) {
                     return;
                 }
-                copyText(position + " / " + marks);
+                var prefix = supplier ? supplier + " / " : "";
+                copyText(prefix + "위치: " + position + " / " + marks);
             });
         });
     })();

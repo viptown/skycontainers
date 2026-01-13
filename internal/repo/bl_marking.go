@@ -25,6 +25,7 @@ type BLMarking struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	SupplierName   string
+	SupplierShort  string
 	SupplierColor  string
 	FrmUnipass     *string
 	HasUnipass     bool
@@ -68,7 +69,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 	offsetIndex := len(args) + 2
 		rows, err := DB.Query(ctx,
 			fmt.Sprintf(`SELECT b.id, b.container_id, b.user_id, b.bl_position_id, b.hbl_no, b.marks, b.cnee, b.is_active, b.created_at,
-													 c.container_no, p.name, u.name, s.name,
+													 c.container_no, p.name, u.name, s.name, s.short_name,
 													 CASE WHEN b.frm_unipass IS NULL THEN false ELSE true END
 											 FROM bl_markings b
 											 LEFT JOIN containers c ON c.id = b.container_id
@@ -93,6 +94,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 		var positionName pgtype.Text
 		var userName pgtype.Text
 		var supplierName pgtype.Text
+		var supplierShort pgtype.Text
 		err := rows.Scan(
 			&item.ID,
 			&item.ContainerID,
@@ -107,6 +109,7 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 			&positionName,
 			&userName,
 			&supplierName,
+			&supplierShort,
 			&item.HasUnipass,
 		)
 		if err != nil {
@@ -130,6 +133,9 @@ func (r *BLMarking) List(ctx context.Context, p pagination.Pager, containerNo st
 		}
 		if supplierName.Valid {
 			item.SupplierName = supplierName.String
+		}
+		if supplierShort.Valid {
+			item.SupplierShort = supplierShort.String
 		}
 		list = append(list, item)
 	}
