@@ -15,6 +15,11 @@
     {{range $idx, $item := $items}}
     <section class="cargo-card">
         <div class="cargo-card-title">수입화물품목카드</div>
+        {{if $item.Quantity}}
+        <div class="cargo-card-overlay" {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"{{end}}>
+            {{$item.Quantity}}
+        </div>
+        {{end}}
         <table class="cargo-card-table">
             <colgroup>
                 <col style="width: 19%;">
@@ -116,6 +121,19 @@
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         position: relative;
         font-family: "Roboto Condensed", "Segoe UI", "Malgun Gothic", sans-serif;
+    }
+
+    .cargo-card-overlay {
+        position: absolute;
+        top: 50%;
+        right: 12mm;
+        font-size: 21rem;
+        font-weight: 900;
+        opacity: 0.35;
+        line-height: 1;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 2;
     }
 
     .cargo-card-title {
