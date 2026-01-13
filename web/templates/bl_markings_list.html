@@ -412,6 +412,41 @@
 </script>
 <script>
     (function () {
+        var form = document.querySelector('form[action="/admin/bl_markings"]');
+        var input = document.getElementById("search_hbl_no");
+        if (!form || !input) {
+            return;
+        }
+
+        var timer;
+        var lastValue = input.value.trim();
+
+        var submitSearch = function () {
+            var value = input.value.trim();
+            if (!value || value === lastValue) {
+                return;
+            }
+            lastValue = value;
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        };
+
+        input.addEventListener("input", function () {
+            clearTimeout(timer);
+            var value = input.value.trim();
+            if (!value) {
+                lastValue = value;
+                return;
+            }
+            timer = setTimeout(submitSearch, 350);
+        });
+    })();
+</script>
+<script>
+    (function () {
         var cells = document.querySelectorAll(".js-copy-marks");
         if (!cells.length) {
             return;
