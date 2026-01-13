@@ -81,7 +81,7 @@ func buildCargoCard(item repo.BLMarking) cargoCardItem {
 	product = truncateRunes(product, 32)
 	containerNo := firstValue(values, "cntrno", "cntrno", "cntrno1", "container")
 	consignee := chooseValue(item.Cnee, item.SupplierName)
-	forwarder := firstValue(values, "shcoflco", "frwrnm", "forwarder", "frwrdnm")
+	forwarder := firstValue(values, "frwrentsconm", "shcoflco", "frwrnm", "forwarder", "frwrdnm")
 
 	hasUnipass := item.FrmUnipass != nil && strings.TrimSpace(*item.FrmUnipass) != ""
 	status := "N"
