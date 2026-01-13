@@ -75,14 +75,8 @@ func buildCargoCard(item repo.BLMarking) cargoCardItem {
 		firstValue(values, "msrm", "m3", "vol", "volume"),
 		firstValue(values, "msrmut", "m3ut", "volut", "volumeut"),
 	)
-	weight := combineValueUnit(
-		firstValue(values, "ttwg", "wght", "weight", "totwt", "wgt"),
-		firstValue(values, "wghtut", "weightut", "totwtut", "wgtut"),
-	)
-	quantity := combineValueUnit(
-		firstValue(values, "pckgcnt"),
-		firstValue(values, "pckut"),
-	)
+	weight := strings.TrimSpace(firstValue(values, "ttwg", "wght", "weight", "totwt", "wgt"))
+	quantity := strings.TrimSpace(firstValue(values, "pckgcnt"))
 	product := firstValue(values, "prnm", "prdtnm", "goodsnm", "gdsnm", "goodsname")
 	product = truncateRunes(product, 32)
 	containerNo := firstValue(values, "cntrno", "cntrno", "cntrno1", "container")

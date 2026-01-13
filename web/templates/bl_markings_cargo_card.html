@@ -17,17 +17,17 @@
         <div class="cargo-card-title">수입화물품목카드</div>
         <table class="cargo-card-table">
             <colgroup>
+                <col style="width: 19%;">
                 <col style="width: 20%;">
-                <col style="width: 25%;">
                 <col style="width: 15%;">
-                <col style="width: 13%;">
+                <col style="width: 20%;">
                 <col style="width: 12%;">
-                <col style="width: 15%;">
+                <col style="width: 19%;">
             </colgroup>
             <tr>
                 <th>입항일</th>
                 <td>{{$item.ArrivalDate}}</td>
-                <th>선(기)명</th>
+                <th style="width: 19%;">선(기)명</th>
                 <td colspan="3">{{$item.VesselName}}</td>
             </tr>
             <tr>
@@ -40,9 +40,9 @@
                     <svg class="cargo-card-barcode" data-barcode="{{$item.BLNo}}"></svg>
                 </td>
             </tr>
-            <tr>
+            <tr class="cargo-card-metrics">
                 <th>수량</th>
-                <td>{{$item.Quantity}}</td>
+                <td {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"{{end}}>{{$item.Quantity}}</td>
                 <th>용적</th>
                 <td>{{$item.Volume}}</td>
                 <th>중량</th>
@@ -70,7 +70,8 @@
             </tr>
             <tr>
                 <th>Marks</th>
-                <td colspan="5" class="cargo-card-marks" {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"{{end}}>{{$item.Marks}}</td>
+                <td colspan="5" class="cargo-card-marks" {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"
+                    {{end}}>{{$item.Marks}}</td>
             </tr>
         </table>
     </section>
@@ -81,6 +82,8 @@
 {{end}}
 
 <style>
+    @import url("https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&display=swap");
+
     .print-actions {
         display: flex;
         justify-content: space-between;
@@ -95,14 +98,14 @@
     .cargo-card-list {
         display: flex;
         flex-direction: column;
-        gap: 2rem;
+        gap: 1rem;
         align-items: center;
         padding-bottom: 4rem;
     }
 
     .cargo-card {
         border: 1px solid #000;
-        padding: 10mm;
+        padding: 6mm;
         background: #fff;
         width: 210mm;
         height: 297mm;
@@ -112,6 +115,7 @@
         color: #000;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         position: relative;
+        font-family: "Roboto Condensed", "Segoe UI", "Malgun Gothic", sans-serif;
     }
 
     .cargo-card-title {
@@ -137,9 +141,9 @@
     .cargo-card-table th,
     .cargo-card-table td {
         border: 1px solid #000;
-        padding: 0.8rem 0.5rem;
+        padding: 0;
         vertical-align: middle;
-        font-size: 1.45rem;
+        font-size: 1.9rem;
         word-break: break-all;
     }
 
@@ -152,32 +156,39 @@
     }
 
     .cargo-card-table th {
+        padding: 0;
+        /* 또는 0.2rem */
         background: #f2f2f2;
+        color: #000;
         font-weight: 700;
         text-align: center;
         white-space: nowrap;
     }
 
     .cargo-card-bl {
-        font-size: 2.5rem !important;
-        font-weight: 1000;
+        font-size: 4.9rem !important;
+        font-weight: 530;
+        height: auto !important;
         text-align: center;
-        padding: 0.8rem !important;
-        letter-spacing: -0.01em;
+        padding: 0 !important;
+        letter-spacing: 0;
         line-height: 1;
     }
 
     .cargo-card-barcode-container {
-        padding: 0.5rem !important;
+        padding: 0 !important;
         text-align: center;
-        height: 110px;
+        height: auto;
         /* reduced from 140px */
     }
 
     .cargo-card-barcode {
+        padding: 0 !important;
         max-width: 100%;
-        height: 100px;
+        height: 60px;
         /* reduced from 120px */
+        margin: 0;
+        display: block;
     }
 
     .cargo-card-marks {
@@ -190,6 +201,13 @@
         white-space: normal !important;
     }
 
+    .cargo-card-metrics td {
+        height: 30px !important;
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 800;
+    }
+
     .cargo-card-long {
         font-size: 1.7rem;
         font-weight: 800;
@@ -197,7 +215,6 @@
         white-space: normal !important;
         word-break: break-word !important;
     }
-
 
     @page {
         size: A4;
@@ -267,11 +284,11 @@
             JsBarcode(el, value, {
                 format: "CODE128",
                 displayValue: true,
-                height: 80,
-                width: 2.5,
-                margin: 2,
-                fontSize: 20,
-                textMargin: 2
+                height: 60,
+                width: 1.7,
+                margin: 0,
+                fontSize: 14,
+                textMargin: 0
             });
         });
     })();

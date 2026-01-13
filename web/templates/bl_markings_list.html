@@ -160,10 +160,10 @@
                 <th>BL 포지션</th>
                 <th>HBL 번호</th>
                 <th>수하인</th>
-                <th>화물카드프린트</th>
                 <th>Marks</th>
                 <th>사용자</th>
                 <th>생성일</th>
+                <th>화물프린트</th>
                 <th>관리</th>
             </tr>
         </thead>
@@ -175,7 +175,6 @@
                 <td>{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}</td>
                 <td style="font-weight: 600;">{{$item.HBLNo}}</td>
                 <td>{{if $item.Cnee}}{{truncateText $item.Cnee 12}}{{else}}-{{end}}</td>
-                <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
                 <td class="js-copy-marks" data-marks="{{if $item.Marks}}{{$item.Marks}}{{end}}"
                     data-position="{{if $item.BLPositionName}}{{$item.BLPositionName}}{{else}}미지정{{end}}"
                     data-supplier="{{if $item.SupplierShort}}{{$item.SupplierShort}}{{else if $item.SupplierName}}{{$item.SupplierName}}{{end}}"
@@ -184,6 +183,7 @@
                 </td>
                 <td>{{if $item.UserName}}{{$item.UserName}}{{else}}-{{end}}</td>
                 <td>{{formatDate $item.CreatedAt}}</td>
+                <td style="text-align: center;">{{if $item.HasUnipass}}Y{{else}}N{{end}}</td>
                 <td>
                     {{if or (canAccess $.User "update" "bl_markings" $item.UserID) (canAccess $.User "delete"
                     "bl_markings" $item.UserID)}}
