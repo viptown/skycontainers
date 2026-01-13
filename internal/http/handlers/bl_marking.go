@@ -213,15 +213,15 @@ func PostCreateBLMarking(w http.ResponseWriter, r *http.Request) {
 	}
 	isActive := r.FormValue("is_active") == "true"
 
-		item := repo.BLMarking{
-			ContainerID:  containerID,
-			UserID:       userID,
-			BLPositionID: blPositionID,
-			HBLNo:        r.FormValue("hbl_no"),
-			Marks:        r.FormValue("marks"),
-			Cnee:         r.FormValue("cnee"),
-			IsActive:     isActive,
-		}
+	item := repo.BLMarking{
+		ContainerID:  containerID,
+		UserID:       userID,
+		BLPositionID: blPositionID,
+		HBLNo:        r.FormValue("hbl_no"),
+		Marks:        r.FormValue("marks"),
+		Cnee:         r.FormValue("cnee"),
+		IsActive:     isActive,
+	}
 
 	if err := item.Create(r.Context()); err != nil {
 		view.Render(w, r, "bl_markings_form.html", view.PageData{
@@ -308,16 +308,16 @@ func PostUpdateBLMarking(w http.ResponseWriter, r *http.Request) {
 	}
 	isActive := r.FormValue("is_active") == "true"
 
-		item := repo.BLMarking{
-			ID:           id,
-			ContainerID:  containerID,
-			UserID:       userID,
-			BLPositionID: blPositionID,
-			HBLNo:        r.FormValue("hbl_no"),
-			Marks:        r.FormValue("marks"),
-			Cnee:         r.FormValue("cnee"),
-			IsActive:     isActive,
-		}
+	item := repo.BLMarking{
+		ID:           id,
+		ContainerID:  containerID,
+		UserID:       userID,
+		BLPositionID: blPositionID,
+		HBLNo:        r.FormValue("hbl_no"),
+		Marks:        r.FormValue("marks"),
+		Cnee:         r.FormValue("cnee"),
+		IsActive:     isActive,
+	}
 
 	if err := item.Update(r.Context()); err != nil {
 		view.Render(w, r, "bl_markings_form.html", view.PageData{
@@ -336,7 +336,7 @@ func PostUpdateBLMarkingStatus(w http.ResponseWriter, r *http.Request) {
 	repoItem := repo.BLMarking{}
 	existing, err := repoItem.GetByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "찾을 수 없는 항목입니다.", http.StatusNotFound)
+		http.Error(w, "찾을수 없는 항목입니다.", http.StatusNotFound)
 		return
 	}
 	if _, ok := requirePermission(w, r, policy.ActionUpdate, policy.ResourceBLMarkings, existing.UserID, "BL 마킹 수정"); !ok {
