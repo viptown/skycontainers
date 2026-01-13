@@ -60,6 +60,7 @@ ON COLUMN
 CREATE TABLE "suppliers"(
     "id" BIGINT NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "short_name" VARCHAR(255),
     "tel" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "color" VARCHAR(20),

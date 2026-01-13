@@ -54,11 +54,12 @@ func PostCreateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 	isActive := r.FormValue("is_active") == "true"
 
-	item := repo.Supplier{
-		Name:     r.FormValue("name"),
-		Tel:      r.FormValue("tel"),
-		Email:    r.FormValue("email"),
-		Color:    r.FormValue("color"),
+		item := repo.Supplier{
+			Name:     r.FormValue("name"),
+			ShortName: r.FormValue("short_name"),
+			Tel:      r.FormValue("tel"),
+			Email:    r.FormValue("email"),
+			Color:    r.FormValue("color"),
 		IsActive: isActive,
 	}
 
@@ -99,12 +100,13 @@ func PostUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 	isActive := r.FormValue("is_active") == "true"
 
-	item := repo.Supplier{
-		ID:       id,
-		Name:     r.FormValue("name"),
-		Tel:      r.FormValue("tel"),
-		Email:    r.FormValue("email"),
-		Color:    r.FormValue("color"),
+		item := repo.Supplier{
+			ID:       id,
+			Name:     r.FormValue("name"),
+			ShortName: r.FormValue("short_name"),
+			Tel:      r.FormValue("tel"),
+			Email:    r.FormValue("email"),
+			Color:    r.FormValue("color"),
 		IsActive: isActive,
 	}
 

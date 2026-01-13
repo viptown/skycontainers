@@ -25,6 +25,7 @@
         <thead>
             <tr>
                 <th>업체명</th>
+                <th>약칭</th>
                 <th>전화번호</th>
                 <th>이메일</th>
                 <th>색상</th>
@@ -36,6 +37,7 @@
             {{range .Data.Items}}
             <tr id="sup-row-{{.ID}}">
                 <td style="font-weight: 600; color: var(--text-main);">{{.Name}}</td>
+                <td>{{if .ShortName}}{{.ShortName}}{{else}}-{{end}}</td>
                 <td>{{.Tel}}</td>
                 <td>{{.Email}}</td>
                 <td>
@@ -81,7 +83,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="6" style="text-align: center; padding: 5rem 0;">
+                <td colspan="7" style="text-align: center; padding: 5rem 0;">
                     <div class="empty-state">
                         <p style="color: var(--text-muted); font-size: 1rem;">등록된 업체가 없습니다.</p>
                     </div>

@@ -21,6 +21,12 @@
     </div>
 
     <div class="form-group">
+        <label for="short_name">업체 약칭 (Short Name)</label>
+        <input type="text" id="short_name" name="short_name" value="{{if .Data}}{{.Data.ShortName}}{{end}}"
+            placeholder="예: 스카이">
+    </div>
+
+    <div class="form-group">
         <label for="tel">전화번호 (Tel)</label>
         <input type="text" id="tel" name="tel" value="{{if .Data}}{{.Data.Tel}}{{end}}" required
             placeholder="02-1234-5678">

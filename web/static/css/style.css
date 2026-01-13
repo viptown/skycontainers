@@ -333,7 +333,7 @@ h3 {
 }
 
 h1 {
-    font-size: 2.2rem;
+    font-size: 3rem;
 }
 
 h2 {
@@ -363,7 +363,7 @@ th {
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
     text-transform: uppercase;
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     letter-spacing: 0.08em;
 }
 
