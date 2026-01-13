@@ -42,7 +42,7 @@
             </tr>
             <tr class="cargo-card-metrics">
                 <th>수량</th>
-                <td {{if $item.MarksColor}}style="color: {{$item.MarksColor}};"{{end}}>{{$item.Quantity}}</td>
+                <td {{if $item.MarksColor}}style="color: {{$item.MarksColor}};" {{end}}>{{$item.Quantity}}</td>
                 <th>용적</th>
                 <td>{{$item.Volume}}</td>
                 <th>중량</th>
@@ -105,7 +105,7 @@
 
     .cargo-card {
         border: 1px solid #000;
-        padding: 6mm;
+        padding: 5mm;
         background: #fff;
         width: 210mm;
         height: 297mm;
@@ -150,7 +150,7 @@
     /* Fixed alignment for specific data */
     tr:first-child td {
         text-align: center;
-        font-weight: 800;
+        font-weight: 530;
         white-space: nowrap;
         font-size: 1.55rem;
     }
@@ -167,8 +167,8 @@
 
     .cargo-card-bl {
         font-size: 4.9rem !important;
-        font-weight: 530;
-        height: auto !important;
+        font-weight: 520 !important;
+        height: 30px !important;
         text-align: center;
         padding: 0 !important;
         letter-spacing: 0;
@@ -178,7 +178,7 @@
     .cargo-card-barcode-container {
         padding: 0 !important;
         text-align: center;
-        height: auto;
+        height: 80px;
         /* reduced from 140px */
     }
 
@@ -202,7 +202,7 @@
     }
 
     .cargo-card-metrics td {
-        height: 30px !important;
+        height: 20px !important;
         text-align: center;
         font-size: 3rem;
         font-weight: 800;
@@ -246,6 +246,12 @@
             display: none !important;
         }
 
+        .cargo-card-list {
+            gap: 0;
+            padding: 0;
+            align-items: stretch;
+        }
+
         body {
             background: #fff !important;
             margin: 0 !important;
@@ -264,8 +270,9 @@
             border: 1px solid #000;
             margin: 0;
             width: 210mm;
-            height: 297mm;
+            height: 296mm;
             page-break-after: always;
+            page-break-inside: avoid;
         }
 
         .cargo-card:last-child {
@@ -294,6 +301,3 @@
     })();
 </script>
 {{end}}
-.cargo-card-bl {
-font-size: 10rem !important;
-}
